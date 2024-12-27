@@ -33,3 +33,6 @@ abort_return_home_delay: 5.0  # (s) Delay before returning home after abort
 # Operational Flags
 enable_takeoff: true  # (bool) Enable or disable takeoff functionality
 verbose_mode: true    # (bool) Enable detailed telemetry logging
+
+# Transition Logic Type
+transition_type: "tailsitter_pitch_program"  # Options: "tailsitter_pitch_program", "other_transition_type"
