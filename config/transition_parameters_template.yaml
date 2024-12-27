@@ -24,3 +24,8 @@ TRANSITION_MONITOR_INTERVAL: 1.0  # (s) Interval for monitoring transition param
 TRANSITION_STATUS_UPDATE: true  # (bool) Enable detailed telemetry updates during transition
 TRANSITION_CONTROL_GAIN_PITCH: 1.0  # (unitless) PID gain for pitch control
 TRANSITION_CONTROL_GAIN_THROTTLE: 1.0  # (unitless) PID gain for throttle control
+
+
+# Operational Flags
+enable_takeoff: false  # (bool) Enable or disable takeoff functionality
+verbose_mode: true    # (bool) Enable detailed telemetry logging

@@ -3,7 +3,8 @@
 import asyncio
 import logging
 from mavsdk import System
-from mavsdk.offboard import OffboardError, AttitudeRate, PositionNedYaw
+from mavsdk.offboard import OffboardError, AttitudeRate
+
 
 class VTOLTransition:
     """
@@ -16,6 +17,13 @@ class VTOLTransition:
         self.logger = logging.getLogger('VTOLTransition')
 
     async def arm_and_takeoff(self):
+        """
+        Arms the drone and initiates takeoff if enabled in the configuration.
+        """
+        if not self.config.get('enable_takeoff', False):
+            self.logger.info("Takeoff disabled by configuration. Skipping arm and takeoff.")
+            return
+
         self.logger.info("Arming the drone...")
         await self.drone.action.arm()
 
@@ -30,6 +38,9 @@ class VTOLTransition:
             await asyncio.sleep(0.5)
 
     async def start_offboard(self):
+        """
+        Starts offboard mode for sending commands.
+        """
         self.logger.info("Starting offboard mode...")
         try:
             await self.drone.offboard.set_attitude_rate(
@@ -37,7 +48,7 @@ class VTOLTransition:
                     roll_deg_s=0.0,
                     pitch_deg_s=0.0,
                     yaw_deg_s=0.0,
-                    thrust_value=0.5  # 0.0 to 1.0
+                    thrust_value=0.5  # Thrust value between 0.0 and 1.0
                 )
             )
             await self.drone.offboard.start()
@@ -49,13 +60,12 @@ class VTOLTransition:
 
     async def execute_transition(self):
         """
-        Placeholder for transition logic. For now, it just maintains the current attitude.
-        Extend this method with actual transition algorithms as needed.
+        Placeholder for transition logic. Currently disabled.
         """
-        self.logger.info("Executing transition logic...")
+        self.logger.info("Transition logic is currently disabled.")
         try:
             while True:
-                # Placeholder: maintain current attitude
+                # Placeholder: No transition logic implemented
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             self.logger.info("Transition execution cancelled.")
