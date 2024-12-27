@@ -9,23 +9,27 @@ connection_endpoint: "udp://:14540"  # Example for UDP
 telemetry_update_interval: 1.0  # (s) Interval in seconds to update telemetry data
 
 # Transition Parameters
-TRANSITION_SAFE_ALTITUDE: 10.0  # (m) Altitude to initiate transition
-TRANSITION_TARGET_AIRSPEED: 15.0  # (m/s) Airspeed to switch to fixed-wing mode
-TRANSITION_MAX_TILT_ANGLE: 45.0  # (degrees) Maximum tilt angle during transition
-TRANSITION_MAX_TILT_RATE: 1.0  # (degrees/s) Rate at which tilt angle increases
-TRANSITION_INITIAL_THROTTLE: 50.0  # (%) Initial throttle percentage at start of transition
-TRANSITION_THROTTLE_INCREMENT: 5.0  # (%) Throttle increment per step
-TRANSITION_MAX_THROTTLE: 100.0  # (%) Maximum throttle during transition
-TRANSITION_MAX_TIME: 60.0  # (s) Maximum time allowed for pitch programming
-TRANSITION_TIMEOUT_DURATION: 120.0  # (s) Overall transition timeout duration
-TRANSITION_FAILSAFE_RETURN_HOME: true  # (bool) Enable automatic return to home on fail-safe
-TRANSITION_FAILSAFE_MAX_TILT: 45.0  # (degrees) Maximum tilt angle before triggering fail-safe
-TRANSITION_MONITOR_INTERVAL: 1.0  # (s) Interval for monitoring transition parameters
-TRANSITION_STATUS_UPDATE: true  # (bool) Enable detailed telemetry updates during transition
-TRANSITION_CONTROL_GAIN_PITCH: 1.0  # (unitless) PID gain for pitch control
-TRANSITION_CONTROL_GAIN_THROTTLE: 1.0  # (unitless) PID gain for throttle control
+initial_climb_rate: 1.0  # (m/s) Climb rate during takeoff
+transition_base_altitude: 10.0  # (m) Altitude at which transition starts
+transition_yaw_angle: 90.0  # (degrees) Yaw angle to turn towards during transition
+throttle_ramp_time: 5.0  # (s) Time to ramp throttle to max
+max_throttle: 100.0  # (percent) Maximum throttle
+max_tilt_pitch: 30.0  # (degrees) Maximum pitch angle for tilt
 
+# Telemetry Monitoring Parameters
+transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
+max_altitude: 50.0  # (m) Maximum altitude allowed
+transition_timeout: 120.0  # (s) Time before aborting transition
+
+# Fail-safe Parameters
+altitude_failsafe_threshold: 8.0  # (m) Altitude below which to abort
+climb_rate_failsafe_threshold: 0.3  # (m/s) Climb rate below which to abort
+air_speed_failsafe_threshold: 25.0  # (m/s) Airspeed above which to abort
+max_pitch_failsafe: 35.0  # (degrees) Maximum pitch before abort
+max_roll_failsafe: 15.0  # (degrees) Maximum roll before abort
+max_altitude_failsafe: 55.0  # (m) Maximum altitude before abort
+abort_return_home_delay: 5.0  # (s) Delay before returning home after abort
 
 # Operational Flags
-enable_takeoff: false  # (bool) Enable or disable takeoff functionality
+enable_takeoff: true  # (bool) Enable or disable takeoff functionality
 verbose_mode: true    # (bool) Enable detailed telemetry logging
