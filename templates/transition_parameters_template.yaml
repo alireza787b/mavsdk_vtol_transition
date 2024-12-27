@@ -1,0 +1,31 @@
+# Parameters Template
+
+
+# Connection Settings
+connection_type: "udp"  # Options: "udp", "serial"
+connection_endpoint: "udp://:14540"  # Example for UDP
+# connection_endpoint: "serial:///dev/ttyUSB0:57600"  # Example for Serial
+
+# Telemetry Parameters
+telemetry_update_interval: 1.0  # (s) Interval in seconds to update telemetry data
+
+# Transition Parameters
+TRANSITION_SAFE_ALTITUDE: 10.0  # (m) Altitude to initiate transition
+TRANSITION_TARGET_AIRSPEED: 15.0  # (m/s) Airspeed to switch to fixed-wing mode
+TRANSITION_MAX_TILT_ANGLE: 45.0  # (degrees) Maximum tilt angle during transition
+TRANSITION_MAX_TILT_RATE: 1.0  # (degrees/s) Rate at which tilt angle increases
+TRANSITION_INITIAL_THROTTLE: 50.0  # (%) Initial throttle percentage at start of transition
+TRANSITION_THROTTLE_INCREMENT: 5.0  # (%) Throttle increment per step
+TRANSITION_MAX_THROTTLE: 100.0  # (%) Maximum throttle during transition
+TRANSITION_MAX_TIME: 60.0  # (s) Maximum time allowed for pitch programming
+TRANSITION_TIMEOUT_DURATION: 120.0  # (s) Overall transition timeout duration
+TRANSITION_FAILSAFE_RETURN_HOME: true  # (bool) Enable automatic return to home on fail-safe
+TRANSITION_FAILSAFE_MAX_TILT: 45.0  # (degrees) Maximum tilt angle before triggering fail-safe
+TRANSITION_MONITOR_INTERVAL: 1.0  # (s) Interval for monitoring transition parameters
+TRANSITION_STATUS_UPDATE: true  # (bool) Enable detailed telemetry updates during transition
+TRANSITION_CONTROL_GAIN_PITCH: 1.0  # (unitless) PID gain for pitch control
+TRANSITION_CONTROL_GAIN_THROTTLE: 1.0  # (unitless) PID gain for throttle control
+TRANSITION_PAYLOAD_WEIGHT: 0.0  # (kg) Current payload weight influencing transition dynamics
+TRANSITION_BALANCE_POINT: 0.0  # (m) Drone's center of gravity during transition
+TRANSITION_USER_OVERRIDE: false  # (bool) Allow manual override of transition parameters
+TRANSITION_MANUAL_CONTROL_MODE: MANUAL  # (enum) Control mode when user override is active
