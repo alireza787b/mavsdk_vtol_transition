@@ -92,10 +92,7 @@ class TailsitterPitchProgram:
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
             position_velocity_ned = telemetry.get("position_velocity_ned")
-            if position_velocity_ned:
-                altitude = -position_velocity_ned.position.down_m
-            else:
-                altitude = 0.0  # Default fallback
+            altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
 
             if altitude >= initial_climb_height:
                 self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
@@ -116,16 +113,10 @@ class TailsitterPitchProgram:
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
             position_velocity_ned = telemetry.get("position_velocity_ned")
-            if position_velocity_ned:
-                altitude = -position_velocity_ned.position.down_m
-            else:
-                altitude = 0.0  # Default fallback
+            altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
 
             euler_angle = telemetry.get("euler_angle")
-            if euler_angle:
-                current_yaw = euler_angle.yaw_deg
-            else:
-                current_yaw = 0.0  # Default fallback
+            current_yaw = euler_angle.yaw_deg if euler_angle else 0.0
 
             if altitude >= transition_base_altitude:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
@@ -140,7 +131,9 @@ class TailsitterPitchProgram:
         Gradually ramp throttle and tilt simultaneously over the configured duration.
         """
         telemetry = self.telemetry_handler.get_telemetry()
-        current_throttle = telemetry.get("fixedwing_metrics", {}).get("throttle_percentage", 0.0) / 100.0
+        fixedwing_metrics = telemetry.get("fixedwing_metrics")
+        current_throttle = fixedwing_metrics.throttle_percentage / 100.0 if fixedwing_metrics else 0.0
+
         max_throttle = self.config.get("max_throttle", 0.8)
         max_tilt = -self.config.get("max_tilt_pitch", 80.0)
         ramp_time = self.config.get("throttle_ramp_time", 5.0)
@@ -174,10 +167,10 @@ class TailsitterPitchProgram:
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
             position_velocity_ned = telemetry.get("position_velocity_ned")
-            if position_velocity_ned:
-                altitude = -position_velocity_ned.position.down_m
-            else:
-                altitude = 0.0  # Default fallback
+            altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
+
+            fixedwing_metrics = telemetry.get("fixedwing_metrics")
+            airspeed = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
 
             elapsed_time = asyncio.get_event_loop().time() - start_time
 
@@ -186,7 +179,6 @@ class TailsitterPitchProgram:
                 await self.abort_transition()
                 break
 
-            airspeed = telemetry.get("fixedwing_metrics", {}).get("airspeed_m_s", 0.0)
             if airspeed >= self.config.get("transition_air_speed", 20.0):
                 self.logger.info("Airspeed sufficient for transition. Switching to fixed-wing mode.")
                 await self.drone.action.transition_to_fixedwing()
