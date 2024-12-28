@@ -153,13 +153,14 @@ class TailsitterPitchProgram:
         self.logger.info(f"Ramping throttle over {throttle_ramp_time} seconds and tilt over {tilt_ramp_time} seconds.")
 
         for i in range(max(throttle_steps, tilt_steps)):
+            telemetry = self.telemetry_handler.get_telemetry()
             if i < throttle_steps:
                 throttle += throttle_step
             if i < tilt_steps:
                 tilt += tilt_step
-
+            current_tilt_real = -1 * telemetry.get("euler_angle").pitch_deg
             await self.drone.offboard.set_attitude(Attitude(0.0, tilt , transition_yaw_angle, throttle))
-            self.logger.info(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
+            self.logger.info(f"Throttle: {throttle:.2f}, Tilt Command: {tilt:.2f}, Current Tilt: {current_tilt_real}")
 
             await asyncio.sleep(0.1)
 

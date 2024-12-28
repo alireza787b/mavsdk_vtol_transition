@@ -34,7 +34,7 @@ throttle_ramp_time: 5.0  # (s) Time to ramp throttle to maximum
 max_throttle: 0.8  # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 80.0  # (degrees) Maximum pitch angle for tilt
 
-forward_transition_time: 30.0  # (s) Time to transition to max tilt
+forward_transition_time: 60.0  # (s) Time to transition to max tilt
 over_tilt_enabled: false       # (bool) Allow tilting beyond max_tilt_pitch
 
 transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
