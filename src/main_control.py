@@ -6,8 +6,7 @@ import yaml
 import logging
 from modules.connection_manager import ConnectionManager
 from modules.telemetry_handler import TelemetryHandler
-from modules.transition_logic import VTOLTransition  # Ensure VTOLTransition is aliased to TailsitterPitchProgram
-
+from modules.transition_manager import TransitionManager  # Use TransitionManager instead of direct logic
 
 async def main():
     # Parse command-line arguments
@@ -63,15 +62,15 @@ async def main():
     # Start telemetry subscriptions in a separate task
     telemetry_task = asyncio.create_task(telemetry_handler.start_telemetry())
 
-    # Initialize VTOLTransition
-    vtol_transition = VTOLTransition(
+    # Initialize TransitionManager
+    transition_manager = TransitionManager(
         connection_manager.drone,
         config,
         telemetry_handler
     )
 
     # Execute transition logic in a separate task
-    transition_task = asyncio.create_task(vtol_transition.execute_transition())
+    transition_task = asyncio.create_task(transition_manager.execute_transition())
 
     try:
         # Keep the main thread alive while telemetry and transition tasks are running

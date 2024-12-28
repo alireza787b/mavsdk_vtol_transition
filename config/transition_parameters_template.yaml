@@ -34,13 +34,10 @@ throttle_ramp_time: 5.0  # (s) Time to ramp throttle to maximum
 max_throttle: 0.8  # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 80.0  # (degrees) Maximum pitch angle for tilt
 
-# ============================================================
-#                  Telemetry Monitoring Parameters
-# ============================================================
+forward_transition_time: 10.0  # (s) Time to transition to max tilt
+over_tilt_enabled: false       # (bool) Allow tilting beyond max_tilt_pitch
 
 transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
-max_altitude: 100.0  # (m) Maximum altitude allowed during transition
-transition_timeout: 120.0  # (s) Time before aborting the transition
 
 # ============================================================
 #                       Fail-safe Parameters
@@ -48,12 +45,16 @@ transition_timeout: 120.0  # (s) Time before aborting the transition
 
 altitude_failsafe_threshold: 8.0  # (m) Altitude below which to abort the transition
 climb_rate_failsafe_threshold: 0.3  # (m/s) Climb rate below which to abort the transition
-air_speed_failsafe_threshold: 25.0  # (m/s) Airspeed above which to abort the transition
-max_pitch_failsafe: 100.0  # (degrees) Maximum pitch angle before aborting the transition
+air_speed_failsafe_threshold: 40.0  # (m/s) Airspeed above which to abort the transition
+max_allowed_tilt: 110.0        # (degrees) Maximum allowable tilt during over-tilting
+altitude_loss_limit: 20.0      # (m) Maximum allowable altitude loss during over-tilting
+max_pitch_failsafe: 130.0  # (degrees) Maximum pitch angle before aborting the transition
 max_roll_failsafe: 30.0  # (degrees) Maximum roll angle before aborting the transition
-max_altitude_failsafe: 105.0  # (m) Maximum altitude before aborting the transition
+max_altitude_failsafe: 120.0  # (m) Maximum altitude before aborting the transition
 abort_return_home_delay: 5.0  # (s) Delay before returning home after aborting the transition
 failsafe_multicopter_transition: true  # (bool) Whether to transition to multicopter mode as part of abort
+transition_timeout: 120.0  # (s) Time before aborting the transition
+
 
 # ============================================================
 #                          Operational Flags
