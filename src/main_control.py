@@ -6,7 +6,8 @@ import yaml
 import logging
 from modules.connection_manager import ConnectionManager
 from modules.telemetry_handler import TelemetryHandler
-from modules.transition_manager import TransitionManager
+from modules.transition_logic import VTOLTransition  # Ensure VTOLTransition is aliased to TailsitterPitchProgram
+
 
 async def main():
     # Parse command-line arguments
@@ -34,7 +35,7 @@ async def main():
     logger = logging.getLogger('MainControl')
     logger.setLevel(logging.DEBUG if config.get('verbose_mode', False) else logging.INFO)
 
-    # Console handler for real-time telemetry display
+    # Console handler for real-time telemetry display and logging
     console_handler = logging.StreamHandler()
     console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     console_handler.setFormatter(console_formatter)
@@ -45,6 +46,8 @@ async def main():
     file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
+
+    logger.info("Starting MAVSDK VTOL Transition Control Script.")
 
     # Initialize ConnectionManager
     connection_manager = ConnectionManager(config)
@@ -60,15 +63,15 @@ async def main():
     # Start telemetry subscriptions in a separate task
     telemetry_task = asyncio.create_task(telemetry_handler.start_telemetry())
 
-    # Initialize TransitionManager
-    transition_manager = TransitionManager(
+    # Initialize VTOLTransition
+    vtol_transition = VTOLTransition(
         connection_manager.drone,
         config,
         telemetry_handler
     )
 
     # Execute transition logic in a separate task
-    transition_task = asyncio.create_task(transition_manager.execute_transition())
+    transition_task = asyncio.create_task(vtol_transition.execute_transition())
 
     try:
         # Keep the main thread alive while telemetry and transition tasks are running
@@ -84,6 +87,7 @@ async def main():
         # Stop telemetry subscriptions
         await telemetry_handler.stop_telemetry()
         logger.info("Shutdown complete.")
+
 
 if __name__ == "__main__":
     try:
