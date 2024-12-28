@@ -130,8 +130,7 @@ class TailsitterPitchProgram:
         """
         telemetry = self.telemetry_handler.get_telemetry()
         fixedwing_metrics = telemetry.get("fixedwing_metrics")
-        self.logger.info(f"debug {fixedwing_metrics.throttle_percentage}...")
-        current_throttle = fixedwing_metrics.throttle_percentage / 100.0 if fixedwing_metrics else 0.0
+        current_throttle = fixedwing_metrics.throttle_percentage if fixedwing_metrics else 0.7
         self.logger.info(f"Current throttle at the beginning of transition is {current_throttle}...")
         transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)
 
