@@ -108,6 +108,7 @@ class TailsitterPitchProgram:
         """
         transition_base_altitude = self.config.get("transition_base_altitude", 10.0)
         secondary_climb_rate = self.config.get("secondary_climb_rate", 1.0)
+        transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)
         self.logger.info(f"Starting secondary climb to {transition_base_altitude} meters at {secondary_climb_rate} m/s.")
 
         while True:
@@ -115,14 +116,11 @@ class TailsitterPitchProgram:
             position_velocity_ned = telemetry.get("position_velocity_ned")
             altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
 
-            euler_angle = telemetry.get("euler_angle")
-            current_yaw = euler_angle.yaw_deg if euler_angle else 0.0
-
             if altitude >= transition_base_altitude:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
                 break
 
-            await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, current_yaw))
+            await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, transition_yaw_angle))
             self.logger.info(f"Secondary climb in progress... Current altitude: {altitude:.2f} meters, Target: {transition_base_altitude} meters.")
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
@@ -133,6 +131,9 @@ class TailsitterPitchProgram:
         telemetry = self.telemetry_handler.get_telemetry()
         fixedwing_metrics = telemetry.get("fixedwing_metrics")
         current_throttle = fixedwing_metrics.throttle_percentage / 100.0 if fixedwing_metrics else 0.0
+        transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)
+
+
 
         max_throttle = self.config.get("max_throttle", 0.8)
         max_tilt = -self.config.get("max_tilt_pitch", 80.0)
@@ -156,8 +157,8 @@ class TailsitterPitchProgram:
             if i < tilt_steps:
                 tilt += tilt_step
 
-            await self.drone.offboard.set_attitude(Attitude(0.0, tilt , 0.0, throttle))
-            self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
+            await self.drone.offboard.set_attitude(Attitude(0.0, tilt , transition_yaw_angle, throttle))
+            self.logger.info(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
 
             await asyncio.sleep(0.1)
 
