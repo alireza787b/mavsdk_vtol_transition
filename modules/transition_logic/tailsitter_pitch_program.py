@@ -1,14 +1,17 @@
-#modules/transition_logic/tailsitter_pitch_program.py
 import asyncio
 import logging
-import math
-from mavsdk.offboard import Attitude, OffboardError
-
+from mavsdk.offboard import (
+    PositionNedYaw,
+    VelocityBodyYawspeed,
+    VelocityNedYaw,
+    Attitude,
+    OffboardError,
+)
 
 class TailsitterPitchProgram:
     """
     Transition logic for a tailsitter VTOL drone.
-    Handles arming, takeoff, throttle and tilt ramping, and failsafes.
+    Handles arming, takeoff, initial climb, throttle ramping, tilt ramping, and failsafes.
     """
 
     def __init__(self, drone, config, telemetry_handler):
@@ -18,13 +21,12 @@ class TailsitterPitchProgram:
         :param drone: MAVSDK Drone object for controlling the vehicle
         :param config: Configuration dictionary containing operational parameters
         :param telemetry_handler: Telemetry handler for fetching real-time drone telemetry
-        :param logger: Logger for detailed output and debugging
         """
         self.drone = drone
         self.config = config
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.highest_altitude = 0.0  # Track the highest altitude during transition
+        self.highest_altitude = 0.0  # Tracks the highest altitude during the transition
 
     async def execute_transition(self):
         """
@@ -36,6 +38,8 @@ class TailsitterPitchProgram:
                 await self.arm_and_takeoff()
 
             await self.start_offboard(retries=3)
+            await self.initial_climb_phase()
+            await self.secondary_climb_phase()
             await self.ramp_throttle()
             await self.tilt_transition()
             await self.monitor_and_switch()
@@ -64,7 +68,7 @@ class TailsitterPitchProgram:
         """
         for attempt in range(retries):
             try:
-                await self.drone.offboard.set_attitude(Attitude(0.0, 0.0, 0.0, 0.6))
+                await self.drone.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0))
                 await self.drone.offboard.start()
                 self.logger.info("Offboard mode activated.")
                 return
@@ -78,17 +82,57 @@ class TailsitterPitchProgram:
         self.logger.error("Failed to enter offboard mode after retries. Returning to launch.")
         await self.abort_transition()
 
+    async def initial_climb_phase(self):
+        """
+        Initial climb phase to reach a preliminary altitude.
+        """
+        initial_climb_height = self.config.get("initial_climb_height", 5.0)
+        initial_climb_rate = self.config.get("initial_climb_rate", 2.0)
+        self.logger.info(f"Starting initial climb to {initial_climb_height} meters at {initial_climb_rate} m/s.")
+
+        while True:
+            telemetry = self.telemetry_handler.get_telemetry()
+            altitude = -telemetry.get("position_ned", {}).get("down_m", 0.0)
+
+            if altitude >= initial_climb_height:
+                self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
+                break
+            await self.drone.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, initial_climb_rate, 0.0))
+            await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
+
+    async def secondary_climb_phase(self):
+        """
+        Secondary climb phase to transition base altitude.
+        """
+        transition_base_altitude = self.config.get("transition_base_altitude", 10.0)
+        secondary_climb_rate = self.config.get("secondary_climb_rate", 1.0)
+        self.logger.info(f"Starting secondary climb to {transition_base_altitude} meters at {secondary_climb_rate} m/s.")
+
+        while True:
+            telemetry = self.telemetry_handler.get_telemetry()
+            altitude = -telemetry.get("position_ned", {}).get("down_m", 0.0)
+            current_yaw = telemetry.get("euler_angle", {}).get("yaw_deg", 0.0)
+
+            if altitude >= transition_base_altitude:
+                self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
+                break
+            await self.drone.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate , current_yaw))
+            await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
+
     async def ramp_throttle(self):
         """
         Gradually ramp throttle over the configured duration.
+        Starts from the current throttle value.
         """
+        telemetry = self.telemetry_handler.get_telemetry()
+        current_throttle = telemetry.get("fixedwing_metrics", {}).get("throttle_percentage", 0.0) / 100.0
         max_throttle = self.config.get("max_throttle", 0.8)
         ramp_time = self.config.get("throttle_ramp_time", 5.0)
         steps = int(ramp_time / 0.1)
-        throttle_step = max_throttle / steps
+        throttle_step = (max_throttle - current_throttle) / steps
 
-        throttle = 0.0
-        self.logger.info(f"Ramping throttle over {ramp_time} seconds.")
+        throttle = current_throttle
+        self.logger.info(f"Ramping throttle from {throttle:.2f} over {ramp_time} seconds to {max_throttle:.2f}.")
         for _ in range(steps):
             throttle += throttle_step
             await self.drone.offboard.set_attitude(Attitude(0.0, 0.0, 0.0, throttle))
@@ -104,7 +148,7 @@ class TailsitterPitchProgram:
         """
         Gradually tilt the drone to the maximum allowed tilt or beyond if enabled.
         """
-        max_tilt = -self.config.get("max_tilt_pitch", 80.0)  # Negative for tilting forward
+        max_tilt = -self.config.get("max_tilt_pitch", 80.0)
         forward_transition_time = self.config.get("forward_transition_time", 10.0)
         over_tilt_enabled = self.config.get("over_tilt_enabled", False)
         max_allowed_tilt = -self.config.get("max_allowed_tilt", 120.0)
@@ -120,21 +164,17 @@ class TailsitterPitchProgram:
             altitude = -telemetry.get("position_ned", {}).get("down_m", 0.0)
             climb_rate = telemetry.get("fixedwing_metrics", {}).get("climb_rate_m_s", 0.0)
 
-            # Update highest altitude
             self.highest_altitude = max(self.highest_altitude, altitude)
 
-            # Stop tilting if climb rate failsafe is triggered
             if climb_rate < self.config.get("climb_rate_failsafe_threshold", 0.3):
                 self.logger.warning("Climb rate below threshold. Stopping tilt progression.")
                 break
 
-            # Check altitude loss during over-tilting
             if altitude < (self.highest_altitude - altitude_loss_limit):
                 self.logger.error("Excessive altitude loss detected. Aborting transition.")
                 await self.abort_transition()
                 return
 
-            # Continue tilting
             tilt += tilt_step
             if over_tilt_enabled and tilt < max_allowed_tilt:
                 await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, self.config.get("max_throttle", 0.8)))
