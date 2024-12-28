@@ -14,7 +14,7 @@ import yaml
 import logging
 from modules.connection_manager import ConnectionManager
 from modules.telemetry_handler import TelemetryHandler
-from modules.transition_manager import TransitionManager  # Use TransitionManager instead of direct logic
+from modules.transition_manager import TransitionManager
 
 async def main():
     # Parse command-line arguments
@@ -47,22 +47,17 @@ async def main():
     # Override the transition_yaw_angle parameter with the provided yaw argument
     config["transition_yaw_angle"] = args.yaw
 
-    # Set up root logger with both console and file handlers
+    # Set up root logger (configured once)
+    logging.basicConfig(
+        level=logging.DEBUG if config.get('verbose_mode', False) else logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),  # Console output
+            logging.FileHandler('mavsdk_vtol_transition.log')  # File output
+        ]
+    )
+
     logger = logging.getLogger('MainControl')
-    logger.setLevel(logging.DEBUG if config.get('verbose_mode', False) else logging.INFO)
-
-    # Console handler for real-time telemetry display and logging
-    console_handler = logging.StreamHandler()
-    console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    # File handler for persistent logging
-    file_handler = logging.FileHandler('mavsdk_vtol_transition.log')
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
     logger.info("Starting MAVSDK VTOL Transition Control Script.")
 
     # Initialize ConnectionManager
