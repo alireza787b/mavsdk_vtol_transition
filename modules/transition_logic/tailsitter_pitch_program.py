@@ -1,5 +1,6 @@
 #modules/transition_logic/tailsitter_pitch_program.py
 import asyncio
+import logging
 import math
 from mavsdk.offboard import Attitude, OffboardError
 
@@ -10,7 +11,7 @@ class TailsitterPitchProgram:
     Handles arming, takeoff, throttle and tilt ramping, and failsafes.
     """
 
-    def __init__(self, drone, config, telemetry_handler, logger):
+    def __init__(self, drone, config, telemetry_handler):
         """
         Initialize the transition logic.
 
@@ -22,7 +23,7 @@ class TailsitterPitchProgram:
         self.drone = drone
         self.config = config
         self.telemetry_handler = telemetry_handler
-        self.logger = logger
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.highest_altitude = 0.0  # Track the highest altitude during transition
 
     async def execute_transition(self):
