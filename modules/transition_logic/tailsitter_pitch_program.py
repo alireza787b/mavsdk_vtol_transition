@@ -67,7 +67,7 @@ class TailsitterPitchProgram:
         """
         for attempt in range(retries):
             try:
-                await self.drone.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0))
+                await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0))
                 await self.drone.offboard.start()
                 self.logger.info("Offboard mode activated.")
                 return
@@ -96,7 +96,7 @@ class TailsitterPitchProgram:
             if altitude >= initial_climb_height:
                 self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
                 break
-            await self.drone.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, initial_climb_rate, 0.0))
+            await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, initial_climb_rate, 0.0))
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
     async def secondary_climb_phase(self):
@@ -115,7 +115,7 @@ class TailsitterPitchProgram:
             if altitude >= transition_base_altitude:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
                 break
-            await self.drone.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, current_yaw))
+            await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, current_yaw))
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
     async def ramp_throttle_and_tilt(self):
