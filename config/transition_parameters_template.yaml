@@ -61,7 +61,7 @@ transition_timeout: 120.0  # (s) Time before aborting the transition
 # ============================================================
 
 enable_takeoff: true  # (bool) Enable or disable takeoff functionality
-verbose_mode: true    # (bool) Enable detailed telemetry logging
+verbose_mode: false    # (bool) Enable detailed telemetry logging
 
 # ============================================================
 #                       Transition Logic Type

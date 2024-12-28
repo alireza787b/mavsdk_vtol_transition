@@ -18,14 +18,14 @@ class TailsitterPitchProgram:
         """
         Initialize the transition logic.
 
-        :param drone: MAVSDK Drone object for controlling the vehicle
-        :param config: Configuration dictionary containing operational parameters
-        :param telemetry_handler: Telemetry handler for fetching real-time drone telemetry
+        :param drone: MAVSDK Drone object for controlling the vehicle.
+        :param config: Configuration dictionary containing operational parameters.
+        :param telemetry_handler: Telemetry handler for fetching real-time drone telemetry.
         """
         self.drone = drone
         self.config = config
         self.telemetry_handler = telemetry_handler
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")  # Hierarchical logger name
         self.highest_altitude = 0.0  # Tracks the highest altitude during the transition
 
     async def execute_transition(self):
@@ -138,7 +138,7 @@ class TailsitterPitchProgram:
         for _ in range(steps):
             throttle += throttle_step
             tilt += tilt_step
-            await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, throttle))
+            await self.drone.offboard.set_attitude(Attitude(0.0, tilt, 0.0, throttle))
 
             if self.config.get("verbose_mode", False):
                 self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
