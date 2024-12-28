@@ -8,6 +8,7 @@ from mavsdk.offboard import (
     OffboardError,
 )
 
+
 class TailsitterPitchProgram:
     """
     Transition logic for a tailsitter VTOL drone.
@@ -91,13 +92,15 @@ class TailsitterPitchProgram:
 
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
-            altitude = -telemetry.get("position_ned", {}).get("down_m", 0.0)
+            position_velocity_ned = telemetry.get("position_velocity_ned", {})
+            altitude = -position_velocity_ned.get("position", {}).get("down_m", 0.0)
 
             if altitude >= initial_climb_height:
                 self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
                 break
+
             await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, -initial_climb_rate, 0.0))
-            self.logger.info(f"Initial Climb in progress... {altitude} meters for {initial_climb_height} m.")
+            self.logger.info(f"Initial climb in progress... Current altitude: {altitude:.2f} meters, Target: {initial_climb_height} meters.")
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
     async def secondary_climb_phase(self):
@@ -110,14 +113,16 @@ class TailsitterPitchProgram:
 
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
-            altitude = -telemetry.get("position_ned", {}).get("down_m", 0.0)
+            position_velocity_ned = telemetry.get("position_velocity_ned", {})
+            altitude = -position_velocity_ned.get("position", {}).get("down_m", 0.0)
             current_yaw = telemetry.get("euler_angle", {}).get("yaw_deg", 0.0)
 
             if altitude >= transition_base_altitude:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
                 break
+
             await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, current_yaw))
-            self.logger.info(f"Secondary Climb in progress... {altitude} meters for {transition_base_altitude} m.")
+            self.logger.info(f"Secondary climb in progress... Current altitude: {altitude:.2f} meters, Target: {transition_base_altitude} meters.")
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
     async def ramp_throttle_and_tilt(self):
@@ -140,7 +145,7 @@ class TailsitterPitchProgram:
         for _ in range(steps):
             throttle += throttle_step
             tilt += tilt_step
-            await self.drone.offboard.set_attitude(Attitude(0.0, tilt, 0.0, throttle))
+            await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, throttle))
 
             if self.config.get("verbose_mode", False):
                 self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
@@ -158,6 +163,8 @@ class TailsitterPitchProgram:
 
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
+            position_velocity_ned = telemetry.get("position_velocity_ned", {})
+            altitude = -position_velocity_ned.get("position", {}).get("down_m", 0.0)
             elapsed_time = asyncio.get_event_loop().time() - start_time
 
             if elapsed_time > transition_timeout:
