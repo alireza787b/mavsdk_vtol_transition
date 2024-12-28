@@ -25,7 +25,7 @@ class TailsitterPitchProgram:
         self.drone = drone
         self.config = config
         self.telemetry_handler = telemetry_handler
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")  # Hierarchical logger name
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.highest_altitude = 0.0  # Tracks the highest altitude during the transition
 
     async def execute_transition(self):
@@ -128,7 +128,7 @@ class TailsitterPitchProgram:
 
     async def ramp_throttle_and_tilt(self):
         """
-        Gradually ramp throttle and tilt simultaneously over the configured duration.
+        Gradually ramp throttle and tilt over their respective configured durations.
         """
         telemetry = self.telemetry_handler.get_telemetry()
         fixedwing_metrics = telemetry.get("fixedwing_metrics")
@@ -136,26 +136,32 @@ class TailsitterPitchProgram:
 
         max_throttle = self.config.get("max_throttle", 0.8)
         max_tilt = -self.config.get("max_tilt_pitch", 80.0)
-        ramp_time = self.config.get("throttle_ramp_time", 5.0)
-        steps = int(ramp_time / 0.1)
-        throttle_step = (max_throttle - current_throttle) / steps
-        tilt_step = max_tilt / steps
+        throttle_ramp_time = self.config.get("throttle_ramp_time", 5.0)
+        tilt_ramp_time = self.config.get("forward_transition_time", 15.0)
+
+        throttle_steps = int(throttle_ramp_time / 0.1)
+        tilt_steps = int(tilt_ramp_time / 0.1)
+
+        throttle_step = (max_throttle - current_throttle) / throttle_steps
+        tilt_step = max_tilt / tilt_steps
 
         throttle = current_throttle
         tilt = 0.0
 
-        self.logger.info(f"Ramping throttle and tilt over {ramp_time} seconds.")
-        for _ in range(steps):
-            throttle += throttle_step
-            tilt += tilt_step
-            await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, throttle))
+        self.logger.info(f"Ramping throttle over {throttle_ramp_time} seconds and tilt over {tilt_ramp_time} seconds.")
 
-            if self.config.get("verbose_mode", False):
-                self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
+        for i in range(max(throttle_steps, tilt_steps)):
+            if i < throttle_steps:
+                throttle += throttle_step
+            if i < tilt_steps:
+                tilt += tilt_step
+
+            await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, throttle))
+            self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
 
             await asyncio.sleep(0.1)
 
-        self.logger.info("Throttle and tilt ramp complete.")
+        self.logger.info("Throttle and tilt ramping complete.")
 
     async def monitor_and_switch(self):
         """
