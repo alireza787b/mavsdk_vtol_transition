@@ -50,7 +50,7 @@ max_allowed_tilt: 110.0        # (degrees) Maximum allowable tilt during over-ti
 altitude_loss_limit: 20.0      # (m) Maximum allowable altitude loss during over-tilting
 max_pitch_failsafe: 130.0  # (degrees) Maximum pitch angle before aborting the transition
 max_roll_failsafe: 30.0  # (degrees) Maximum roll angle before aborting the transition
-max_altitude_failsafe: 120.0  # (m) Maximum altitude before aborting the transition
+max_altitude_failsafe: 200.0  # (m) Maximum altitude before aborting the transition
 abort_return_home_delay: 5.0  # (s) Delay before returning home after aborting the transition
 failsafe_multicopter_transition: true  # (bool) Whether to transition to multicopter mode as part of abort
 transition_timeout: 120.0  # (s) Time before aborting the transition
@@ -61,7 +61,7 @@ transition_timeout: 120.0  # (s) Time before aborting the transition
 # ============================================================
 
 enable_takeoff: true  # (bool) Enable or disable takeoff functionality
-verbose_mode: false    # (bool) Enable detailed telemetry logging
+verbose_mode: true    # (bool) Enable detailed telemetry logging
 
 # ============================================================
 #                       Transition Logic Type

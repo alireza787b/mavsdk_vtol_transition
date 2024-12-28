@@ -96,7 +96,7 @@ class TailsitterPitchProgram:
             if altitude >= initial_climb_height:
                 self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
                 break
-            await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, initial_climb_rate, 0.0))
+            await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, -initial_climb_rate, 0.0))
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
 
     async def secondary_climb_phase(self):
