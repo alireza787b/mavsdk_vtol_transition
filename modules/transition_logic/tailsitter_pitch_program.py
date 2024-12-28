@@ -13,7 +13,7 @@ from .base_transition import BaseTransition
 class TailsitterPitchProgram(BaseTransition):
     """
     Transition logic for a tailsitter VTOL drone.
-    Handles arming, takeoff, initial climb, throttle ramping, tilt ramping, and failsafes.
+    Handles arming, takeoff, initial climb, throttle ramping, tilt ramping, concurrent monitoring, and failsafes.
     """
 
     def __init__(self, drone, config: dict, telemetry_handler):
@@ -27,6 +27,7 @@ class TailsitterPitchProgram(BaseTransition):
         super().__init__(drone, config, telemetry_handler)
         self.launch_yaw_angle = 0.0
         self.highest_altitude = 0.0  # Tracks the highest altitude during the transition
+        self._transition_lock = asyncio.Lock()  # Ensures thread-safe transition handling
 
     async def execute_transition(self) -> str:
         """
@@ -42,10 +43,55 @@ class TailsitterPitchProgram(BaseTransition):
             await self.start_offboard(retries=3)
             await self.initial_climb_phase()
             await self.secondary_climb_phase()
-            await self.ramp_throttle_and_tilt()
-            status = await self.monitor_and_switch()
-            return status
 
+            # Create concurrent tasks for ramping and monitoring
+            ramp_task = asyncio.create_task(self.ramp_throttle_and_tilt())
+            monitor_task = asyncio.create_task(self.monitor_and_switch())
+
+            # Wait for either task to complete
+            done, pending = await asyncio.wait(
+                [ramp_task, monitor_task],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+
+            # Handle completed tasks
+            for task in done:
+                if task == monitor_task:
+                    status = task.result()
+                    if status == "success":
+                        self.logger.info("Monitor task detected successful transition.")
+                        ramp_task.cancel()  # Cancel ramping as transition is complete
+                        return "success"
+                    else:
+                        self.logger.warning("Monitor task detected failure during transition.")
+                        ramp_task.cancel()  # Cancel ramping due to failure
+                        return "failure"
+                elif task == ramp_task:
+                    # Ramping completed; wait for monitor to determine next steps
+                    self.logger.info("Ramping task completed. Awaiting monitoring results.")
+                    try:
+                        # Await monitor_task to determine final status
+                        status = await monitor_task
+                        return status
+                    except asyncio.CancelledError:
+                        self.logger.warning("Monitor task was cancelled after ramping completion.")
+                        return "failure"
+
+            # If both tasks are done, determine the status
+            if monitor_task.done():
+                return monitor_task.result()
+            elif ramp_task.done():
+                return ramp_task.result()
+
+            # Default to failure if unexpected behavior occurs
+            self.logger.error("Unexpected state in execute_transition.")
+            await self.abort_transition()
+            return "failure"
+
+        except asyncio.CancelledError:
+            self.logger.warning("Transition execution was cancelled.")
+            await self.abort_transition()
+            return "failure"
         except Exception as e:
             self.logger.error(f"Error during transition: {e}")
             await self.abort_transition()
@@ -158,6 +204,7 @@ class TailsitterPitchProgram(BaseTransition):
     async def ramp_throttle_and_tilt(self) -> None:
         """
         Gradually ramp throttle and tilt over their respective configured durations.
+        Runs concurrently with telemetry monitoring.
         """
         telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
         telemetry = self.telemetry_handler.get_telemetry()
@@ -189,33 +236,51 @@ class TailsitterPitchProgram(BaseTransition):
 
         self.logger.info(f"Ramping throttle over {throttle_ramp_time} seconds and tilt over {tilt_ramp_time} seconds.")
 
-        for i in range(max(throttle_steps, tilt_steps)):
-            telemetry = self.telemetry_handler.get_telemetry()
-            fixedwing_metrics = telemetry.get("fixedwing_metrics")
+        try:
+            for i in range(max(throttle_steps, tilt_steps)):
+                telemetry = self.telemetry_handler.get_telemetry()
+                fixedwing_metrics = telemetry.get("fixedwing_metrics")
 
-            if i < throttle_steps:
-                throttle += throttle_step
-                throttle = min(throttle, max_throttle)  # Ensure throttle does not exceed max
-            if i < tilt_steps:
-                tilt += tilt_step
-                tilt = min(tilt, max_tilt)  # Ensure tilt does not exceed max
+                if i < throttle_steps:
+                    throttle += throttle_step
+                    throttle = min(throttle, max_throttle)  # Ensure throttle does not exceed max
+                if i < tilt_steps:
+                    tilt += tilt_step
+                    tilt = min(tilt, max_tilt)  # Ensure tilt does not exceed max
 
-            current_tilt_real = telemetry.get("euler_angle").pitch_deg if telemetry.get("euler_angle") else 0.0
-            current_airspeed_real = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
+                current_tilt_real = telemetry.get("euler_angle").pitch_deg if telemetry.get("euler_angle") else 0.0
+                current_airspeed_real = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
 
-            # Command attitude with updated tilt and throttle
-            await self.drone.offboard.set_attitude(Attitude(roll_deg=0.0, pitch_deg=tilt, yaw_deg=launch_yaw_angle, throttle=throttle))
-            self.logger.debug(
-                f"Throttle: {throttle:.2f}, Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}, Airspeed: {current_airspeed_real:.0f} m/s"
-            )
+                # Command attitude with updated tilt and throttle
+                await self.drone.offboard.set_attitude(
+                    Attitude(
+                        roll_deg=0.0,
+                        pitch_deg=tilt,
+                        yaw_deg=launch_yaw_angle,
+                        throttle=throttle
+                    )
+                )
+                self.logger.debug(
+                    f"Throttle: {throttle:.2f}, Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}, Airspeed: {current_airspeed_real:.0f} m/s"
+                )
 
-            await asyncio.sleep(telemetry_interval)
+                await asyncio.sleep(telemetry_interval)
 
-        self.logger.info("Throttle and tilt ramping complete.")
+            self.logger.info("Throttle and tilt ramping complete.")
+        except asyncio.CancelledError:
+            self.logger.info("Throttle and tilt ramping task was cancelled.")
+            # Optionally, set throttle and tilt to safe values upon cancellation
+            await self.drone.offboard.set_attitude(Attitude(roll_deg=0.0, pitch_deg=0.0, yaw_deg=launch_yaw_angle, throttle=0.0))
+            raise
+        except Exception as e:
+            self.logger.error(f"Error during throttle and tilt ramping: {e}")
+            await self.abort_transition()
+            raise
 
     async def monitor_and_switch(self) -> str:
         """
         Monitor telemetry and transition to fixed-wing mode when criteria are met.
+        This runs concurrently with throttle and tilt ramping.
 
         :return: Status string indicating 'success' or 'failure'.
         """
@@ -224,26 +289,34 @@ class TailsitterPitchProgram(BaseTransition):
         telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
 
         while True:
-            telemetry = self.telemetry_handler.get_telemetry()
-            position_velocity_ned = telemetry.get("position_velocity_ned")
-            altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
+            try:
+                telemetry = self.telemetry_handler.get_telemetry()
+                position_velocity_ned = telemetry.get("position_velocity_ned")
+                altitude = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
 
-            fixedwing_metrics = telemetry.get("fixedwing_metrics")
-            airspeed = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
+                fixedwing_metrics = telemetry.get("fixedwing_metrics")
+                airspeed = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
 
-            elapsed_time = asyncio.get_event_loop().time() - start_time
+                elapsed_time = asyncio.get_event_loop().time() - start_time
 
-            if elapsed_time > transition_timeout:
-                self.logger.warning("Transition timeout reached. Aborting transition.")
+                if elapsed_time > transition_timeout:
+                    self.logger.warning("Transition timeout reached. Aborting transition.")
+                    await self.abort_transition()
+                    return "failure"
+
+                if airspeed >= self.config.get("transition_air_speed", 20.0):
+                    self.logger.info("Airspeed sufficient for transition. Switching to fixed-wing mode.")
+                    status = await self.success_transition()
+                    return status
+
+                await asyncio.sleep(telemetry_interval)
+            except asyncio.CancelledError:
+                self.logger.info("Monitor task was cancelled.")
+                return "failure"
+            except Exception as e:
+                self.logger.error(f"Error during monitoring: {e}")
                 await self.abort_transition()
                 return "failure"
-
-            if airspeed >= self.config.get("transition_air_speed", 20.0):
-                self.logger.info("Airspeed sufficient for transition. Switching to fixed-wing mode.")
-                status = await self.success_transition()
-                return status
-
-            await asyncio.sleep(telemetry_interval)
 
     async def success_transition(self) -> str:
         """
@@ -261,6 +334,10 @@ class TailsitterPitchProgram(BaseTransition):
             # Initiate Hold Flight Mode
             await self.drone.action.hold()
             self.logger.info("HOLD mode activated.")
+
+            # Stop offboard mode as it's no longer needed
+            await self.drone.offboard.stop()
+            self.logger.info("Offboard mode stopped after successful transition.")
 
             # Return success status
             return "success"
