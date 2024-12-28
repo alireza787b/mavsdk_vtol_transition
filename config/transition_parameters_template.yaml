@@ -30,7 +30,7 @@ secondary_climb_rate: 1.0  # (m/s) Climb rate during the secondary climb phase
 # Main Transition Parameters
 transition_base_altitude: 10.0  # (m) Altitude at which the transition starts
 transition_yaw_angle: 0.0  # (degrees) Yaw angle to turn towards during the transition
-throttle_ramp_time: 5.0  # (s) Time to ramp throttle to maximum
+throttle_ramp_time: 10.0  # (s) Time to ramp throttle to maximum
 max_throttle: 0.8  # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 80.0  # (degrees) Maximum pitch angle for tilt
 
