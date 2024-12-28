@@ -156,7 +156,7 @@ class TailsitterPitchProgram:
             if i < tilt_steps:
                 tilt += tilt_step
 
-            await self.drone.offboard.set_attitude(Attitude(tilt, 0.0, 0.0, throttle))
+            await self.drone.offboard.set_attitude(Attitude(0.0, tilt , 0.0, throttle))
             self.logger.debug(f"Throttle: {throttle:.2f}, Tilt: {tilt:.2f}")
 
             await asyncio.sleep(0.1)
