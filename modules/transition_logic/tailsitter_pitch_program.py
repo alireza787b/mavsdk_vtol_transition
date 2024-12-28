@@ -194,21 +194,19 @@ class TailsitterPitchProgram:
             
     async def success_transition(self):
         """
-        Switch to ACRO mode, transition to fixed-wing, and initiate Hold Flight Mode.
+        transition to fixed-wing, and initiate Hold Flight Mode.
         """
-        self.logger.info("Transision suceeded: Transitioning to ACRO mode and performing fixed-wing switch.")
+        self.logger.info("Transision suceeded:  performing fixed-wing switch.")
 
         try:
-            # Switch to ACRO mode
-            await self.drone.action.set_flight_mode("ACRO")
-            self.logger.info("ACRO mode activated.")
+            
 
             # Transition to fixed-wing
             await self.drone.action.transition_to_fixedwing()
             self.logger.info("Transitioned to fixed-wing mode.")
 
             # Initiate Hold Flight Mode
-            await self.drone.action.set_flight_mode("HOLD")
+            await self.drone.action.hold()
             self.logger.info("HOLD mode activated.")
         except Exception as e:
             self.logger.error(f"Failsafe error: {e}")
