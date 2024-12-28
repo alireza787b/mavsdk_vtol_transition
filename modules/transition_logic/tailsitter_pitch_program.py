@@ -354,6 +354,12 @@ class TailsitterPitchProgram(BaseTransition):
         :return: Status string indicating 'failure'.
         """
         self.logger.error("Aborting transition and initiating fail-safe procedures.")
+        
+        try:
+            await self.drone.offboard.stop()
+            self.logger.info("Offboard mode stopped.")
+        except Exception as e:
+            self.logger.error(f"Error stopping offboard mode: {e}")
 
         try:
             if self.config.get("failsafe_multicopter_transition", True):
@@ -362,15 +368,18 @@ class TailsitterPitchProgram(BaseTransition):
         except Exception as e:
             self.logger.warning(f"Error transitioning to multicopter: {e}")
 
+        
+            
         try:
-            await self.drone.offboard.stop()
-            self.logger.info("Offboard mode stopped.")
+            await self.drone.action.hold()
+            self.logger.info("Switch to HOLD Flight Mode.")
         except Exception as e:
-            self.logger.error(f"Error stopping offboard mode: {e}")
+            self.logger.error(f"Error switching to hold flight mode: {e}")
 
         try:
-            await self.drone.action.return_to_launch()
-            self.logger.info("Return to Launch initiated.")
+            if self.config.get("return_to_launch_on_abort", True):
+                await self.drone.action.return_to_launch()
+                self.logger.info("Return to Launch initiated.")
         except Exception as e:
             self.logger.error(f"Error initiating Return to Launch: {e}")
 

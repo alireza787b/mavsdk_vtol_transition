@@ -1,5 +1,19 @@
 # config/transition_parameters_template.yaml
 
+
+# ============================================================
+#                       Transition Logic Type
+# ============================================================
+
+transition_type: "tailsitter_pitch_program"  # Options: "tailsitter_pitch_program", "other_transition_type"
+
+# ============================================================
+#                          Operational Flags
+# ============================================================
+
+enable_takeoff: true  # (bool) Enable or disable takeoff functionality
+verbose_mode: false    # (bool) Enable detailed telemetry logging
+
 # ============================================================
 #                         Connection Settings
 # ============================================================
@@ -11,7 +25,7 @@ connection_endpoint: "udp://:14540"  # Example for UDP
 #                       Telemetry Parameters
 # ============================================================
 
-telemetry_update_interval: 0.1  # (s) Interval in seconds to update telemetry data
+telemetry_update_interval: 0.1  # (s) Interval in seconds to update telemetry data and send offboard command
 
 # ============================================================
 #                        Transition Parameters
@@ -25,7 +39,7 @@ initial_climb_rate: 2.0  # (m/s) Climb rate during the initial climb phase
 initial_climb_height: 5.0  # (m) Target altitude for the initial climb phase
 
 # Secondary Climb Phase Parameters
-secondary_climb_rate: 1.0  # (m/s) Climb rate during the secondary climb phase
+secondary_climb_rate: 3.0  # (m/s) Climb rate during the secondary climb phase
 
 # Main Transition Parameters
 transition_base_altitude: 10.0  # (m) Altitude at which the transition starts
@@ -35,7 +49,7 @@ max_throttle: 0.8  # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 80.0  # (degrees) Maximum pitch angle for tilt
 
 forward_transition_time: 40.0  # (s) Time to transition to max tilt
-over_tilt_enabled: true       # (bool) Allow tilting beyond max_tilt_pitch
+over_tilt_enabled: true       # (bool) Allow tilting beyond max_tilt_pitch (Intentional dive to gain airspeed)
 
 transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
 
@@ -43,28 +57,17 @@ transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
 #                       Fail-safe Parameters
 # ============================================================
 
-altitude_failsafe_threshold: 8.0  # (m) Altitude below which to abort the transition
-climb_rate_failsafe_threshold: 0.3  # (m/s) Climb rate below which to abort the transition
+altitude_failsafe_threshold: 10.0  # (m) Altitude below which to abort the transition
+climb_rate_failsafe_threshold: 0.3  # (m/s) Climb rate below which to abort the transition (Ignored if over_tilt_enabled = true)
 air_speed_failsafe_threshold: 40.0  # (m/s) Airspeed above which to abort the transition
 max_allowed_tilt: 110.0        # (degrees) Maximum allowable tilt during over-tilting
 altitude_loss_limit: 20.0      # (m) Maximum allowable altitude loss during over-tilting
 max_pitch_failsafe: 130.0  # (degrees) Maximum pitch angle before aborting the transition
 max_roll_failsafe: 30.0  # (degrees) Maximum roll angle before aborting the transition
 max_altitude_failsafe: 200.0  # (m) Maximum altitude before aborting the transition
-abort_return_home_delay: 5.0  # (s) Delay before returning home after aborting the transition
+return_to_launch_on_abort: 5.0  # (bool) Return to home after aborting the transition
 failsafe_multicopter_transition: true  # (bool) Whether to transition to multicopter mode as part of abort
 transition_timeout: 120.0  # (s) Time before aborting the transition
 
 
-# ============================================================
-#                          Operational Flags
-# ============================================================
 
-enable_takeoff: true  # (bool) Enable or disable takeoff functionality
-verbose_mode: false    # (bool) Enable detailed telemetry logging
-
-# ============================================================
-#                       Transition Logic Type
-# ============================================================
-
-transition_type: "tailsitter_pitch_program"  # Options: "tailsitter_pitch_program", "other_transition_type"
