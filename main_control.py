@@ -1,4 +1,12 @@
-# main_control.py
+"""
+Professional MAVSDK VTOL Transition Control Script
+
+Arguments:
+    --config : (Optional) Path to the configuration YAML file. If not provided, the default is:
+               config/transition_parameters_template.yaml
+    --yaw    : (Optional) Yaw angle (degrees) to override the `transition_yaw_angle` parameter in the configuration.
+               If not specified, the default value is 0.0 degrees.
+"""
 
 import asyncio
 import argparse
@@ -14,8 +22,14 @@ async def main():
     parser.add_argument(
         '--config',
         type=str,
-        required=True,
-        help='Path to transition_parameters.yaml'
+        default="config/transition_parameters_template.yaml",  # Default path to the configuration file
+        help='Path to transition_parameters.yaml (default: config/transition_parameters_template.yaml)'
+    )
+    parser.add_argument(
+        '--yaw',
+        type=float,
+        default=0.0,  # Default yaw angle if not specified
+        help='Yaw angle (degrees) to override the transition_yaw_angle parameter in the configuration.'
     )
     args = parser.parse_args()
 
@@ -24,11 +38,14 @@ async def main():
         with open(args.config, 'r') as file:
             config = yaml.safe_load(file)
     except FileNotFoundError:
-        print(f"Configuration file not found: {args.config}")
+        print(f"Configuration file not found: {args.config}. Exiting.")
         return
     except yaml.YAMLError as e:
-        print(f"Error parsing configuration file: {e}")
+        print(f"Error parsing configuration file: {e}. Exiting.")
         return
+
+    # Override the transition_yaw_angle parameter with the provided yaw argument
+    config["transition_yaw_angle"] = args.yaw
 
     # Set up root logger with both console and file handlers
     logger = logging.getLogger('MainControl')
