@@ -1,6 +1,7 @@
 # modules/transition_manager.py
 
 import logging
+from typing import Type, Dict
 from .transition_logic.base_transition import BaseTransition
 from .transition_logic.tailsitter_pitch_program import TailsitterPitchProgram
 # Import other transition classes as needed
@@ -8,15 +9,16 @@ from .transition_logic.tailsitter_pitch_program import TailsitterPitchProgram
 class TransitionManager:
     """
     Manages the selection and execution of transition logic.
+    Facilitates executing and aborting transitions, and reports their statuses.
     """
 
-    TRANSITION_CLASSES = {
+    TRANSITION_CLASSES: Dict[str, Type[BaseTransition]] = {
         'tailsitter_pitch_program': TailsitterPitchProgram,
         # 'other_transition_type': OtherTransitionClass,
         # Add new transition types here
     }
 
-    def __init__(self, drone, config, telemetry_handler):
+    def __init__(self, drone, config: dict, telemetry_handler):
         """
         Initialize the TransitionManager.
 
@@ -28,7 +30,7 @@ class TransitionManager:
         self.config = config
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.transition_logic = self._select_transition_logic()
+        self.transition_logic: BaseTransition = self._select_transition_logic()
 
     def _select_transition_logic(self) -> BaseTransition:
         """
@@ -43,17 +45,27 @@ class TransitionManager:
             self.logger.debug(f"Selected {transition_class.__name__} logic.")
             return transition_class(self.drone, self.config, self.telemetry_handler)
         else:
-            self.logger.error(f"Unknown transition type: {transition_type}. Defaulting to TailsitterPitchProgram.")
+            self.logger.error(
+                f"Unknown transition type: '{transition_type}'. "
+                f"Defaulting to '{TailsitterPitchProgram.__name__}'."
+            )
             return TailsitterPitchProgram(self.drone, self.config, self.telemetry_handler)
 
-    async def execute_transition(self):
+    async def execute_transition(self) -> str:
         """
         Executes the selected transition logic.
-        """
-        await self.transition_logic.execute_transition()
 
-    async def abort_transition(self):
+        :return: Status string indicating 'success' or 'failure'.
+        """
+        self.logger.info(f"Executing transition using '{self.transition_logic.__class__.__name__}'.")
+        status = await self.transition_logic.execute_transition()
+        self.logger.info(f"Transition execution completed with status: {status}.")
+        return status
+
+    async def abort_transition(self) -> None:
         """
         Aborts the transition using the selected transition logic.
         """
+        self.logger.info(f"Aborting transition using '{self.transition_logic.__class__.__name__}'.")
         await self.transition_logic.abort_transition()
+        self.logger.info("Transition aborted successfully.")
