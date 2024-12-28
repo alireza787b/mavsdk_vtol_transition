@@ -121,7 +121,11 @@ class TailsitterPitchProgram:
             else:
                 altitude = 0.0  # Default fallback
 
-            current_yaw = telemetry.get("euler_angle", {}).get("yaw_deg", 0.0)
+            euler_angle = telemetry.get("euler_angle")
+            if euler_angle:
+                current_yaw = euler_angle.yaw_deg
+            else:
+                current_yaw = 0.0  # Default fallback
 
             if altitude >= transition_base_altitude:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
