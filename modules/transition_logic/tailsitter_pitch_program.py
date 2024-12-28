@@ -187,10 +187,31 @@ class TailsitterPitchProgram:
 
             if airspeed >= self.config.get("transition_air_speed", 20.0):
                 self.logger.info("Airspeed sufficient for transition. Switching to fixed-wing mode.")
-                await self.drone.action.transition_to_fixedwing()
+                await self.success_transition()
                 break
 
             await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
+            
+    async def success_transition(self):
+        """
+        Switch to ACRO mode, transition to fixed-wing, and initiate Hold Flight Mode.
+        """
+        self.logger.info("Transision suceeded: Transitioning to ACRO mode and performing fixed-wing switch.")
+
+        try:
+            # Switch to ACRO mode
+            await self.drone.action.set_flight_mode("ACRO")
+            self.logger.info("ACRO mode activated.")
+
+            # Transition to fixed-wing
+            await self.drone.action.transition_to_fixedwing()
+            self.logger.info("Transitioned to fixed-wing mode.")
+
+            # Initiate Hold Flight Mode
+            await self.drone.action.set_flight_mode("HOLD")
+            self.logger.info("HOLD mode activated.")
+        except Exception as e:
+            self.logger.error(f"Failsafe error: {e}")
 
     async def abort_transition(self):
         """
