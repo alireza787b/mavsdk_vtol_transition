@@ -303,7 +303,7 @@ class TailsitterPitchProgram:
                 telemetry = self.telemetry_handler.get_telemetry()
                 fixedwing_metrics = telemetry.get("fixedwing_metrics")
                 euler_angle = telemetry.get("euler_angle")
-
+                position_velocity_ned = telemetry.get("position_velocity_ned")
                 # Update throttle
                 if step < throttle_steps:
                     throttle += throttle_step
@@ -327,13 +327,15 @@ class TailsitterPitchProgram:
 
                 # Log Telemetry Data
                 current_tilt_real = euler_angle.pitch_deg if euler_angle else 0.0
+                current_altitude_real = euler_angle.pitch_deg if euler_angle else 0.0
                 current_airspeed_real = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
-
+                current_altitude_real = -position_velocity_ned.position.down_m if position_velocity_ned else 0.0
                 self.logger.info(
                     f"Step {step + 1}/{total_steps}: "
                     f"Throttle: {throttle:.2f}, "
                     f"Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}°, "
-                    f"Airspeed: {current_airspeed_real:.0f} m/s"
+                    f"Airspeed: {current_airspeed_real:.0f} m/s, "
+                    f"Altitude: {current_altitude_real:.0f} m"
                 )
 
                 await asyncio.sleep(cycle_interval)
