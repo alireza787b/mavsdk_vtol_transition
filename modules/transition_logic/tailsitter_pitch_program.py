@@ -233,8 +233,8 @@ class TailsitterPitchProgram:
         """
         Gradually ramp throttle and tilt over their respective configured durations.
         """
-        self.logger.info("Starting throttle and tilt ramping.")
         self.fwd_transition_start_time = asyncio.get_event_loop().time()
+        self.logger.info(f"Starting throttle and tilt ramping at {self.fwd_transition_start_time}")
         throttle_ramp_time = self.config.get("throttle_ramp_time", 5.0)
         tilt_ramp_time = self.config.get("forward_transition_time", 15.0)
         telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
@@ -301,7 +301,7 @@ class TailsitterPitchProgram:
                 current_airspeed_real = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
 
                 self.logger.info(
-                    f"Step {step + 1}/{max(max_throttle, max_tilt)}: "
+                    f"Step {step + 1}/{tilt_steps}: "
                     f"Throttle: {throttle:.2f}, "
                     f"Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}, "
                     f"Airspeed: {current_airspeed_real:.0f} m/s"
