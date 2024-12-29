@@ -54,10 +54,4 @@ class ConnectionManager:
             self.logger.warning("Attempted to disconnect, but no active connection found.")
             return
 
-        self.logger.info("Disconnecting from drone...")
-        try:
-            await self.drone.
-            self.logger.info("Drone disconnected successfully.")
-            self.is_connected = False
-        except Exception as e:
-            self.logger.error(f"Error while disconnecting from drone: {e}")
+        

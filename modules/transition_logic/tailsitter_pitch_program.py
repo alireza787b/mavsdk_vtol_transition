@@ -14,7 +14,7 @@ class TailsitterPitchProgram:
     Handles arming, takeoff, initial climb, throttle ramping, tilt ramping, and failsafes.
     """
 
-    def __init__(self, drone, config, telemetry_handler):
+    def __init__(self, drone, config: dict, telemetry_handler):
         """
         Initialize the transition logic.
 
@@ -26,11 +26,14 @@ class TailsitterPitchProgram:
         self.config = config
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.launch_yaw_angle = 0.0  # Stores the yaw angle at launch
         self.highest_altitude = 0.0  # Tracks the highest altitude during the transition
 
-    async def execute_transition(self):
+    async def execute_transition(self) -> str:
         """
         Main execution logic for the VTOL transition process.
+
+        :return: Status string indicating 'success' or 'failure'.
         """
         self.logger.info("Starting VTOL transition program.")
         try:
@@ -41,12 +44,17 @@ class TailsitterPitchProgram:
             await self.initial_climb_phase()
             await self.secondary_climb_phase()
             await self.ramp_throttle_and_tilt()
-            await self.monitor_and_switch()
+            status = await self.monitor_and_switch()
+            self.logger.info(f"Transition execution completed with status: {status}.")
+            return status
+
         except Exception as e:
             self.logger.error(f"Error during transition: {e}")
             await self.abort_transition()
+            self.logger.info("Transition execution completed with status: failure.")
+            return "failure"
 
-    async def arm_and_takeoff(self):
+    async def arm_and_takeoff(self) -> None:
         """
         Arm the drone and initiate takeoff.
         """
@@ -56,37 +64,44 @@ class TailsitterPitchProgram:
             await self.drone.action.set_takeoff_altitude(self.config.get("initial_takeoff_height", 3.0))
             await self.drone.action.takeoff()
             self.logger.info("Takeoff initiated.")
-            await asyncio.sleep(5)
+            await asyncio.sleep(5)  # Wait for takeoff to stabilize
         except Exception as e:
             self.logger.error(f"Takeoff failed: {e}")
             await self.abort_transition()
+            raise  # Re-raise to be caught in execute_transition
 
-    async def start_offboard(self, retries=3):
+    async def start_offboard(self, retries: int = 3) -> None:
         """
         Enter offboard mode with retries for added robustness.
+
+        :param retries: Number of retry attempts to enter offboard mode.
         """
-        for attempt in range(retries):
+        for attempt in range(1, retries + 1):
             try:
+                # Initialize with zero velocity to start offboard
                 await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0))
                 await self.drone.offboard.start()
                 self.logger.info("Offboard mode activated.")
                 return
             except OffboardError as e:
-                self.logger.warning(f"Offboard mode failed on attempt {attempt + 1}/{retries}: {e}")
+                self.logger.warning(f"Attempt {attempt}/{retries}: Offboard mode failed - {e}")
                 await asyncio.sleep(2)
             except Exception as e:
                 self.logger.error(f"Unexpected error during offboard start: {e}")
                 break
 
-        self.logger.error("Failed to enter offboard mode after retries. Returning to launch.")
+        self.logger.error("Failed to enter offboard mode after retries. Aborting transition.")
         await self.abort_transition()
+        raise RuntimeError("Offboard mode activation failed.")
 
-    async def initial_climb_phase(self):
+    async def initial_climb_phase(self) -> None:
         """
         Initial climb phase to reach a preliminary altitude.
         """
         initial_climb_height = self.config.get("initial_climb_height", 5.0)
         initial_climb_rate = self.config.get("initial_climb_rate", 2.0)
+        telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
+
         self.logger.info(f"Starting initial climb to {initial_climb_height} meters at {initial_climb_rate} m/s.")
 
         while True:
@@ -98,17 +113,20 @@ class TailsitterPitchProgram:
                 self.logger.info(f"Reached initial climb height: {altitude:.2f} meters.")
                 break
 
+            # Command upward velocity in body frame (positive z is downward)
             await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(0.0, 0.0, -initial_climb_rate, 0.0))
             self.logger.info(f"Initial climb in progress... Current altitude: {altitude:.2f} meters, Target: {initial_climb_height} meters.")
-            await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
+            await asyncio.sleep(telemetry_interval)
 
-    async def secondary_climb_phase(self):
+    async def secondary_climb_phase(self) -> None:
         """
         Secondary climb phase to transition base altitude.
         """
         transition_base_altitude = self.config.get("transition_base_altitude", 10.0)
         secondary_climb_rate = self.config.get("secondary_climb_rate", 1.0)
         transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)
+        telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
+
         self.logger.info(f"Starting secondary climb to {transition_base_altitude} meters at {secondary_climb_rate} m/s.")
 
         while True:
@@ -120,32 +138,33 @@ class TailsitterPitchProgram:
                 self.logger.info(f"Reached transition base altitude: {altitude:.2f} meters.")
                 break
 
+            # Command upward velocity in NED frame
             await self.drone.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, -secondary_climb_rate, transition_yaw_angle))
             self.logger.info(f"Secondary climb in progress... Current altitude: {altitude:.2f} meters, Target: {transition_base_altitude} meters.")
-            await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
+            await asyncio.sleep(telemetry_interval)
 
-    async def ramp_throttle_and_tilt(self):
+    async def ramp_throttle_and_tilt(self) -> None:
         """
         Gradually ramp throttle and tilt over their respective configured durations.
         """
+        telemetry_interval = 0.1  # Fixed interval for ramping steps
         telemetry = self.telemetry_handler.get_telemetry()
         fixedwing_metrics = telemetry.get("fixedwing_metrics")
         current_throttle = fixedwing_metrics.throttle_percentage if fixedwing_metrics else 0.7
-        self.logger.info(f"Current throttle at the beginning of transition is {current_throttle}...")
+        self.logger.info(f"Current throttle at the beginning of transition is {current_throttle:.2f}.")
         transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)
-
-
+        self.logger.debug(f"Using transition yaw angle for ramping: {transition_yaw_angle} degrees.")
 
         max_throttle = self.config.get("max_throttle", 0.8)
-        max_tilt = -self.config.get("max_tilt_pitch", 80.0)
+        max_tilt = -self.config.get("max_tilt_pitch", 80.0)  # Negative for downward tilt
         throttle_ramp_time = self.config.get("throttle_ramp_time", 5.0)
         tilt_ramp_time = self.config.get("forward_transition_time", 15.0)
 
-        throttle_steps = int(throttle_ramp_time / 0.1)
-        tilt_steps = int(tilt_ramp_time / 0.1)
+        throttle_steps = int(throttle_ramp_time / telemetry_interval)
+        tilt_steps = int(tilt_ramp_time / telemetry_interval)
 
-        throttle_step = (max_throttle - current_throttle) / throttle_steps
-        tilt_step = max_tilt / tilt_steps
+        throttle_step = (max_throttle - current_throttle) / throttle_steps if throttle_steps > 0 else 0
+        tilt_step = max_tilt / tilt_steps if tilt_steps > 0 else 0
 
         throttle = current_throttle
         tilt = 0.0
@@ -155,26 +174,46 @@ class TailsitterPitchProgram:
         for i in range(max(throttle_steps, tilt_steps)):
             telemetry = self.telemetry_handler.get_telemetry()
             fixedwing_metrics = telemetry.get("fixedwing_metrics")
-            
+
             if i < throttle_steps:
                 throttle += throttle_step
+                throttle = min(throttle, max_throttle)  # Ensure throttle does not exceed max
             if i < tilt_steps:
                 tilt += tilt_step
-            current_tilt_real = telemetry.get("euler_angle").pitch_deg
-            current_airspeed_real = fixedwing_metrics.airspeed_m_s
-            await self.drone.offboard.set_attitude(Attitude(0.0, tilt , transition_yaw_angle, throttle))
-            self.logger.info(f"Throttle: {throttle:.2f}, Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}, Airspeed:{current_airspeed_real:.0f} ")
+                tilt = min(tilt, max_tilt)  # Ensure tilt does not exceed max
 
-            await asyncio.sleep(0.1)
+            # Fix the Attitude parameter: use 'thrust' instead of 'throttle'
+            await self.drone.offboard.set_attitude(
+                Attitude(
+                    roll_deg=0.0,
+                    pitch_deg=tilt,
+                    yaw_deg=transition_yaw_angle,
+                    thrust=throttle  # Correct parameter name
+                )
+            )
+
+            # Retrieve actual telemetry for logging
+            euler_angle = telemetry.get("euler_angle")
+            current_tilt_real = euler_angle.pitch_deg if euler_angle else 0.0
+            current_airspeed_real = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
+
+            self.logger.info(
+                f"Throttle: {throttle:.2f}, Tilt Actual/Command: {current_tilt_real:.0f}/{tilt:.0f}, Airspeed: {current_airspeed_real:.0f} m/s"
+            )
+
+            await asyncio.sleep(telemetry_interval)
 
         self.logger.info("Throttle and tilt ramping complete.")
 
-    async def monitor_and_switch(self):
+    async def monitor_and_switch(self) -> str:
         """
         Monitor telemetry and transition to fixed-wing mode when criteria are met.
+
+        :return: Status string indicating 'success' or 'failure'.
         """
         start_time = asyncio.get_event_loop().time()
         transition_timeout = self.config.get("transition_timeout", 120.0)
+        telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
 
         while True:
             telemetry = self.telemetry_handler.get_telemetry()
@@ -189,24 +228,24 @@ class TailsitterPitchProgram:
             if elapsed_time > transition_timeout:
                 self.logger.warning("Transition timeout reached. Aborting transition.")
                 await self.abort_transition()
-                break
+                return "failure"
 
             if airspeed >= self.config.get("transition_air_speed", 20.0):
                 self.logger.info("Airspeed sufficient for transition. Switching to fixed-wing mode.")
-                await self.success_transition()
-                break
+                transition_status = await self.success_transition()
+                return transition_status
 
-            await asyncio.sleep(self.config.get("telemetry_update_interval", 0.1))
-            
-    async def success_transition(self):
+            await asyncio.sleep(telemetry_interval)
+
+    async def success_transition(self) -> str:
         """
-        transition to fixed-wing, and initiate Hold Flight Mode.
+        Transition to fixed-wing and initiate Hold Flight Mode.
+
+        :return: Status string indicating 'success' or 'failure'.
         """
-        self.logger.info("Transision suceeded:  performing fixed-wing switch.")
+        self.logger.info("Transition succeeded: performing fixed-wing switch.")
 
         try:
-            
-
             # Transition to fixed-wing
             await self.drone.action.transition_to_fixedwing()
             self.logger.info("Transitioned to fixed-wing mode.")
@@ -214,14 +253,22 @@ class TailsitterPitchProgram:
             # Initiate Hold Flight Mode
             await self.drone.action.hold()
             self.logger.info("HOLD mode activated.")
-        except Exception as e:
-            self.logger.error(f"Failsafe error: {e}")
 
-    async def abort_transition(self):
+            return "success"
+
+        except Exception as e:
+            self.logger.error(f"Failsafe error during fixed-wing transition: {e}")
+            await self.abort_transition()
+            return "failure"
+
+    async def abort_transition(self) -> str:
         """
         Abort the transition and ensure the drone switches to a safe state.
+
+        :return: Status string indicating 'failure'.
         """
         self.logger.error("Aborting transition and initiating fail-safe procedures.")
+
         try:
             if self.config.get("failsafe_multicopter_transition", True):
                 await self.drone.action.transition_to_multicopter()
@@ -240,3 +287,5 @@ class TailsitterPitchProgram:
             self.logger.info("Return to Launch initiated.")
         except Exception as e:
             self.logger.error(f"Error initiating Return to Launch: {e}")
+
+        return "failure"
