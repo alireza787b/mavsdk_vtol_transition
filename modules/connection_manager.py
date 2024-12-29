@@ -2,8 +2,7 @@
 
 import asyncio
 import logging
-from mavsdk import System, SystemError
-from mavsdk.telemetry import ConnectionState
+from mavsdk import System
 
 class ConnectionManager:
     """
