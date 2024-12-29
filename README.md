@@ -204,7 +204,7 @@ The program supports two primary connection types for MAVLink communication: **U
 
 ## Command-Line Arguments
 
-- `--config`: **(Required)** Path to the YAML configuration file.
+- `--config`: **(Optional)** Path to the YAML configuration file. If not specified will use the default template configuration.
 - `--yaw`: **(Optional)** Transition heading angle in degrees.
 
 **Example:**
