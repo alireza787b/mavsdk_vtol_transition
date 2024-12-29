@@ -259,10 +259,10 @@ class TailsitterPitchProgram:
         tilt_ramp_time = self.config.get("forward_transition_time", 15.0)  # (s)
         cycle_interval = self.config.get("cycle_interval", 0.1)  # (s)
         over_tilt_enabled = self.config.get("over_tilt_enabled", False)  # (bool)
-        max_allowed_tilt = self.config.get("max_allowed_tilt", -110.0)  # (degrees, negative for downward tilt)
+        max_allowed_tilt = -1*self.config.get("max_allowed_tilt", 110.0)  # (degrees, negative for downward tilt)
 
         max_throttle = self.config.get("max_throttle", 0.8)  # (unitless, e.g., 0.0 to 1.0)
-        max_tilt = self.config.get("max_tilt_pitch", 80.0)  # (degrees, negative for downward tilt)
+        max_tilt = -1*self.config.get("max_tilt_pitch", 80.0)  # (degrees, negative for downward tilt)
         transition_yaw_angle = self.config.get("transition_yaw_angle", 0.0)  # (degrees)
 
         # Calculate the number of steps for ramping
@@ -344,7 +344,7 @@ class TailsitterPitchProgram:
                 # Calculate remaining tilt steps to reach max_allowed_tilt
                 additional_tilt = max_allowed_tilt - tilt
                 if tilt_step != 0:
-                    over_tilt_steps = int(abs(additional_tilt) / abs(tilt_step))
+                    over_tilt_steps = int(additional_tilt / tilt_step)
                 else:
                     over_tilt_steps = 0
 

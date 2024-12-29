@@ -64,7 +64,7 @@ max_tilt_pitch: 80.0              # (degrees) Maximum pitch angle for tilt
 forward_transition_time: 40.0     # (s) Time to transition to max tilt
 over_tilt_enabled: true           # (bool) Enable over-tilting to gain additional airspeed
 
-max_allowed_tilt: -110.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
+max_allowed_tilt: 110.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
 
 transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
 
