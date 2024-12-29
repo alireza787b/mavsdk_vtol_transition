@@ -1,6 +1,6 @@
 # MAVSDK VTOL Trasistion
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-apache-blue.svg)
 ![GitHub Stars](https://img.shields.io/github/stars/alireza787b/mavsdk_vtol_transition.svg)
 ![GitHub Forks](https://img.shields.io/github/forks/alireza787b/mavsdk_vtol_transition.svg)
 ![GitHub Issues](https://img.shields.io/github/issues/alireza787b/mavsdk_vtol_transition.svg)
