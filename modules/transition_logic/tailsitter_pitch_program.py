@@ -23,7 +23,7 @@ class TailsitterPitchProgram:
         """
         self.drone = drone
         self.config = config
-        self.fwd_transition_start_time = 0
+        self.fwd_transition_start_time = None
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.launch_yaw_angle = 0.0  # Stores the yaw angle at launch
