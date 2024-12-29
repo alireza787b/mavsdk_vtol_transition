@@ -45,8 +45,11 @@ class TailsitterPitchProgram:
         self.logger.info("Starting VTOL transition program.")
         try:
             # Phase 1: Arm and Takeoff
-            if self.config.get("enable_takeoff", True):
-                await self.arm_and_takeoff()
+            if self.config.get("safety_lock", True):
+                self.logger.info("Safety lock is active... Stopping the Mission...")
+                return # Safety Lock
+            
+            await self.arm_and_takeoff()
 
             # Phase 2: Enter Offboard Mode
             await self.start_offboard(retries=3)
