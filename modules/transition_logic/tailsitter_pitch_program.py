@@ -182,13 +182,12 @@ class TailsitterPitchProgram:
                 tilt += tilt_step
                 tilt = min(tilt, max_tilt)  # Ensure tilt does not exceed max
 
-            # Fix the Attitude parameter: use 'thrust' instead of 'throttle'
             await self.drone.offboard.set_attitude(
                 Attitude(
                     roll_deg=0.0,
                     pitch_deg=tilt,
                     yaw_deg=transition_yaw_angle,
-                    thrust=throttle  # Correct parameter name
+                    thrust_value=throttle  # Correct parameter name
                 )
             )
 
