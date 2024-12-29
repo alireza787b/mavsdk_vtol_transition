@@ -2,8 +2,7 @@
 
 import asyncio
 import logging
-from mavsdk import System, SystemError
-from mavsdk.telemetry import ConnectionState
+from mavsdk import System
 
 class ConnectionManager:
     """
@@ -57,7 +56,7 @@ class ConnectionManager:
 
         self.logger.info("Disconnecting from drone...")
         try:
-            await self.drone.close()
+            await self.drone.
             self.logger.info("Drone disconnected successfully.")
             self.is_connected = False
         except Exception as e:
