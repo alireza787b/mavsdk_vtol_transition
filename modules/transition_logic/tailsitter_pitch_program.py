@@ -24,6 +24,7 @@ class TailsitterPitchProgram:
         """
         self.drone = drone
         self.config = config
+        self.fwd_transition_start_time = 0
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.launch_yaw_angle = 0.0  # Stores the yaw angle at launch
@@ -147,7 +148,8 @@ class TailsitterPitchProgram:
         """
         Gradually ramp throttle and tilt over their respective configured durations.
         """
-        telemetry_interval = 0.1  # Fixed interval for ramping steps
+        self.fwd_transition_start_time = asyncio.get_event_loop().time()
+        telemetry_interval = self.config.get("telemetry_update_interval",0.1)  # Fixed interval for ramping steps
         telemetry = self.telemetry_handler.get_telemetry()
         fixedwing_metrics = telemetry.get("fixedwing_metrics")
         current_throttle = fixedwing_metrics.throttle_percentage if fixedwing_metrics else 0.7
@@ -210,7 +212,6 @@ class TailsitterPitchProgram:
 
         :return: Status string indicating 'success' or 'failure'.
         """
-        start_time = asyncio.get_event_loop().time()
         transition_timeout = self.config.get("transition_timeout", 120.0)
         telemetry_interval = self.config.get("telemetry_update_interval", 0.1)
 
@@ -222,7 +223,7 @@ class TailsitterPitchProgram:
             fixedwing_metrics = telemetry.get("fixedwing_metrics")
             airspeed = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
 
-            elapsed_time = asyncio.get_event_loop().time() - start_time
+            elapsed_time = asyncio.get_event_loop().time() - self.fwd_transition_start_time
 
             if elapsed_time > transition_timeout:
                 self.logger.warning("Transition timeout reached. Aborting transition.")
