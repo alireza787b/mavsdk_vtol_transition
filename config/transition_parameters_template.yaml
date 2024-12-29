@@ -24,8 +24,8 @@ transition_type: "tailsitter_pitch_program"  # Options: "tailsitter_pitch_progra
 #                          Operational Flags
 # ============================================================
 
-enable_takeoff: true        # (bool) Enable or disable takeoff functionality
-verbose_mode: false         # (bool) Enable detailed telemetry logging
+safety_lock: false  # (bool) Acts as a Safety Switch
+verbose_mode: false    # (bool) Enable detailed telemetry logging
 
 # ============================================================
 #                         Connection Settings
