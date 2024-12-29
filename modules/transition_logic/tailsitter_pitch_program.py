@@ -23,6 +23,7 @@ class TailsitterPitchProgram:
         """
         self.drone = drone
         self.config = config
+        self.fwd_transition_start_time = 0
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.launch_yaw_angle = 0.0  # Stores the yaw angle at launch
@@ -233,7 +234,7 @@ class TailsitterPitchProgram:
         Gradually ramp throttle and tilt over their respective configured durations.
         """
         self.logger.info("Starting throttle and tilt ramping.")
-
+        self.fwd_transition_start_time = asyncio.get_event_loop().time()
         throttle_ramp_time = self.config.get("throttle_ramp_time", 5.0)
         tilt_ramp_time = self.config.get("forward_transition_time", 15.0)
         telemetry_interval = self.config.get("telemetry_update_interval", 0.1)

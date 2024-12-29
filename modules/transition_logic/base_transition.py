@@ -19,6 +19,7 @@ class BaseTransition(ABC):
         :param telemetry_handler: Instance of TelemetryHandler.
         """
         self.drone = drone
+        self.fwd_transition_start_time = None
         self.config = config
         self.telemetry_handler = telemetry_handler
         self.logger = logging.getLogger(self.__class__.__name__)
