@@ -1,134 +1,233 @@
+# MAVSDK VTOL Trasistion
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![GitHub Stars](https://img.shields.io/github/stars/alireza787b/mavsdk_vtol_transition.svg)
+![GitHub Forks](https://img.shields.io/github/forks/alireza787b/mavsdk_vtol_transition.svg)
+![GitHub Issues](https://img.shields.io/github/issues/alireza787b/mavsdk_vtol_transition.svg)
+
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Configuration Parameters](#configuration-parameters)
+- [Usage](#usage)
+  - [Running the Program](#running-the-program)
+  - [Connection Options](#connection-options)
+- [Command-Line Arguments](#command-line-arguments)
+- [Safety Notice](#safety-notice)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
 ## Overview
 
-The **mavsdk_vtol_transition** module enables custom transition modes for tailsitter VTOL drones using MAVSDK and PX4. This guide provides step-by-step instructions to set up, configure, and execute transition modes.
+The **MAVSDK VTOL Trasistion** is a professional-grade transition logic designed for  Vertical Take-Off and Landing (VTOL) drones, specifally for tailsitters currently. It manages essential phases such as arming, takeoff, initial climb, throttle and tilt ramping, and seamless transition to fixed-wing mode. Enhanced with over-tilting capabilities and comprehensive failsafe mechanisms, this program ensures safe, efficient, and reliable drone operations tailored to various use cases.
 
-## Getting Started
+> **Disclaimer:** This software is not yet tested in real-world scenarios. Use it at your own risk and responsibility.
 
-### 1. Clone the Repository
+## Features
+
+- **Dual Transition Modes:** Supports both climb-then-tilt (dive) and continuous climb-and-tilt transitions.
+- **Over-Tilting Capability:** Enables the drone to tilt beyond the initial maximum pitch to gain additional airspeed when necessary.
+- **Comprehensive Failsafes:** Monitors various telemetry parameters to ensure safe operations and aborts transitions if safety thresholds are breached.
+- **Configurable Parameters:** Easily customizable through YAML configuration files to suit different operational requirements.
+- **Flexible Connection Options:** Supports both UDP and serial connections for MAVLink communication.
+- **Detailed Logging:** Provides verbose telemetry logging for in-depth monitoring and debugging.
+
+## Prerequisites
+
+- **Operating System:** Windows, Linux, or macOS
+- **Python:** Version 3.7 or higher
+- **MAVSDK:** Installed separately (see [Installation](#installation))
+- **Virtual Environment:** Recommended for dependency management
+
+## Installation
+
+1. **Clone the Repository:**
+
+   ```bash
+   git clone https://github.com/alireza787b/mavsdk_vtol_transition.git
+   cd mavsdk_vtol_transition
+   ```
+
+2. **Create a Virtual Environment:**
+
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate the Virtual Environment:**
+
+   - **Windows:**
+
+     ```bash
+     venv\Scripts\activate
+     ```
+
+   - **Linux/macOS:**
+
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install Dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Install MAVSDK Binary:**
+
+   Download the appropriate MAVSDK binary for your operating system from the [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page and follow the installation instructions.
+
+## Configuration
+
+All operational parameters are defined in YAML configuration files located in the `config` directory. You can customize these parameters to fit your specific use case.
+
+### Configuration Parameters
+
+| Parameter                        | Type   | Description                                                                                                             |
+|----------------------------------|--------|-------------------------------------------------------------------------------------------------------------------------|
+| `transition_type`                | string | Type of transition logic to use. Options: `"tailsitter_pitch_program"`, `"other_transition_type"`                       |
+| `enable_takeoff`                 | bool   | Enable or disable the takeoff functionality.                                                                            |
+| `safety_lock`                    | bool   | Acts as a safety switch.                                                                                                 |
+| `verbose_mode`                   | bool   | Enable detailed telemetry logging.                                                                                      |
+| `connection_type`                | string | Type of connection for MAVLink. Options: `"udp"`, `"serial"`.                                                          |
+| `connection_endpoint`            | string | Endpoint for the connection. Example for UDP: `udp://:14540`. Example for Serial: `serial:///dev/ttyUSB0:57600`             |
+| `cycle_interval`                 | float  | Interval in seconds to update telemetry data and send offboard commands.                                                |
+| `initial_takeoff_height`         | float  | Target altitude (meters) for the initial auto takeoff phase.                                                           |
+| `initial_climb_rate`             | float  | Climb rate (m/s) during the initial climb phase.                                                                       |
+| `initial_climb_height`           | float  | Target altitude (meters) for the initial climb phase.                                                                  |
+| `secondary_climb_rate`           | float  | Climb rate (m/s) during the secondary climb phase.                                                                     |
+| `transition_base_altitude`       | float  | Altitude (meters) at which the transition starts.                                                                       |
+| `transition_yaw_angle`           | float  | Yaw angle (degrees) to maintain during the transition.                                                                 |
+| `throttle_ramp_time`             | float  | Time (seconds) to ramp throttle to maximum.                                                                             |
+| `max_throttle`                    | float  | Maximum throttle as a fraction of full thrust (0.0 to 1.0).                                                             |
+| `max_tilt_pitch`                 | float  | Maximum pitch angle (degrees) for tilt. Negative values indicate downward tilt.                                         |
+| `forward_transition_time`         | float  | Time (seconds) to transition to maximum tilt.                                                                           |
+| `over_tilt_enabled`              | bool   | Enable over-tilting to gain additional airspeed.                                                                         |
+| `max_allowed_tilt`               | float  | Maximum allowable tilt (degrees) during over-tilting. Negative for downward tilt.                                       |
+| `transition_air_speed`           | float  | Airspeed (m/s) to trigger fixed-wing mode.                                                                                |
+| `altitude_failsafe_threshold`    | float  | Altitude (meters) below which to abort the transition.                                                                   |
+| `climb_rate_failsafe_threshold`  | float  | Climb rate (m/s) below which to abort the transition. Set to negative if diving/over-tilt is used.                        |
+| `altitude_loss_limit`            | float  | Maximum allowable altitude loss (meters) during over-tilting.                                                             |
+| `max_pitch_failsafe`             | float  | Maximum pitch angle (degrees) before aborting the transition.                                                            |
+| `max_roll_failsafe`              | float  | Maximum roll angle (degrees) before aborting the transition.                                                             |
+| `max_altitude_failsafe`          | float  | Maximum altitude (meters) before aborting the transition.                                                                |
+| `return_to_launch_on_abort`      | bool   | Whether to return to home after aborting the transition.                                                                 |
+| `failsafe_multicopter_transition` | bool   | Whether to transition to multicopter mode as part of abort procedures.                                                   |
+| `transition_timeout`             | float  | Time (seconds) before aborting the transition.                                                                            |
+
+All parameters can be found in the `config` folder. Users can create custom configuration files based on the provided template to suit their specific requirements.
+
+## Usage
+
+### Running the Program
+
+To execute the transition program, use the `main_control.py` script with the desired configuration file. The program supports both Windows and Linux environments.
+
+- **Climb then Tilt (Dive) Transition:**
+
+  ```bash
+  python main_control.py --config ./config/dive_pitch_program.yaml
+  ```
+
+- **Continuous Climb and Tilt Transition:**
+
+  ```bash
+  python main_control.py --config ./config/climb_pitch_program.yaml
+  ```
+
+Users can customize the parameters in these configuration files to fit their specific use cases.
+
+### Connection Options
+
+The program supports two primary connection types for MAVLink communication: **UDP** and **Serial**. Configuration for these connections is handled entirely through the YAML configuration files. Additionally, specific setups like running SITL on Windows Subsystem for Linux (WSL) or using a companion computer may require additional configurations.
+
+
+#### 1. Serial Connection
+
+- **Configuration:**
+
+  ```yaml
+  connection_type: "serial"
+  connection_endpoint: "serial:///dev/ttyS0:57600"
+  ```
+
+  Replace `/dev/ttyS0` with the appropriate serial port on your system and `57600` with the correct baud rate.
+
+- **Usage:**
+
+  When running on a companion computer like a Raspberry Pi, you can use the serial interface for MAVLink communication. Depending on your setup, you might need to use a MAVLink router to bridge serial and UDP connections.
+
+  **Example with MAVLink Router:**
+
+  ```bash
+  mavlink-routerd -e 172.21.144.1:14550 -e 172.21.144.1:14540 /dev/ttyS0:57600
+  ```
+
+  Refer to the [Mavlink Anywhere Tutorial](https://www.youtube.com/watch?v=_QEWpoy6HSo) for detailed instructions.
+
+#### 2. WSL SITL on Windows
+
+- **Configuration Example:**
+
+  ```yaml
+  connection_type: "udp"
+  connection_endpoint: "udp://127.0.0.1:14540"
+  ```
+
+- **Usage:**
+
+  If running SITL on Windows Subsystem for Linux (WSL) and executing the code on Windows, use tools like `mavlink-router` to route MAVLink streams between WSL and Windows:
+
+  ```bash
+  mavlink-routerd -e 172.21.144.1:14550 -e 172.21.144.1:14540 127.0.0.1:14550
+  ```
+
+  Refer to the [Mavlink Anywhere Guide](https://www.youtube.com/watch?v=_QEWpoy6HSo) for more details.
+
+#### 3. SITL on Linux
+
+- **Configuration Example:**
+
+  ```yaml
+  connection_type: "udp"
+  connection_endpoint: "udp://:14540"
+  ```
+
+- **Usage:**
+
+  When running SITL entirely on Linux, the default MAVLink streams on ports `14540` and `14550` are available. Ensure that your configuration points to the correct UDP endpoints without needing additional routing.
+
+## Command-Line Arguments
+
+- `--config`: **(Required)** Path to the YAML configuration file.
+- `--yaw`: **(Optional)** Transition heading angle in degrees.
+
+**Example:**
 
 ```bash
-git clone https://github.com/yourusername/mavsdk_vtol_transition.git
-cd mavsdk_vtol_transition
+python main_control.py --config ./config/dive_pitch_program.yaml --yaw 90
 ```
 
-### 2. Setup Virtual Environment
+This command runs the transition using the `dive_pitch_program.yaml` configuration and sets the transition yaw angle to `90` degrees.
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+## Safety Notice
 
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure Transition Parameters
-
-1. **Copy the Template Configuration:**
-
-    ```bash
-    cp templates/transition_parameters_template.yaml config/drone_specific/drone1_transition_parameters.yaml
-    ```
-
-2. **Customize Parameters:**
-
-    - Open `config/drone_specific/drone1_transition_parameters.yaml` in your preferred editor.
-    - Adjust parameters as needed to suit your drone's specifications and desired transition behavior.
-
-### 5. Add Transition Modes
-
-Each transition mode resides in its own module within the `modules/` directory.
-
-- **Adding a New Transition Mode:**
-
-    1. **Create Module Directory:**
-
-        ```bash
-        mkdir modules/new_transition_mode
-        mkdir modules/new_transition_mode/config
-        ```
-
-    2. **Create Essential Files:**
-
-        ```bash
-        touch modules/new_transition_mode/__init__.py
-        touch modules/new_transition_mode/transition_control.py
-        cp templates/transition_parameters_template.yaml modules/new_transition_mode/config/transition_parameters.yaml
-        ```
-
-    3. **Implement Transition Logic:**
-
-        - Develop the `transition_control.py` script based on the specific requirements of the new transition mode.
-
-    4. **Update `main_control.py`:**
-
-        - Modify `scripts/main_control.py` to include the new transition mode.
-
-### 6. Execute Transition Mode
-
-- **Run the Transition Script:**
-
-    ```bash
-    python scripts/main_control.py --mode pitch_climb --config config/drone_specific/drone1_transition_parameters.yaml
-    ```
-
-    - **Parameters:**
-        - `--mode`: Specifies the transition mode to execute (e.g., `pitch_climb`, `dive_accelerate`).
-        - `--config`: Path to the configuration YAML file.
-
-### 7. Running in Simulation
-
-1. **Launch PX4 with Gazebo:**
-
-    ```bash
-    make px4_sitl gazebo_tailsitter
-    ```
-
-2. **Execute Transition Script:**
-
-    ```bash
-    python scripts/main_control.py --mode pitch_climb --config config/drone_specific/drone1_transition_parameters.yaml
-    ```
-
-### 8. Monitoring and Logging
-
-- **Telemetry Monitoring:**
-    - The transition scripts print real-time telemetry data (altitude, airspeed, pitch, throttle) to the console.
-  
-- **Logging:**
-    - Implement logging mechanisms within each transition module to record detailed telemetry data for post-flight analysis.
-
-### 9. Testing
-
-- **Unit Tests:**
-
-    ```bash
-    python -m unittest discover tests/unit_tests/
-    ```
-
-- **Integration Tests:**
-
-    ```bash
-    python -m unittest discover tests/integration_tests/
-    ```
+**Important:** This software has not been tested in real-world conditions. Use it at your own risk. Ensure you understand the implications of the configuration parameters and thoroughly test in a controlled environment before deploying on actual hardware.
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes. Ensure that your code follows best practices and includes appropriate documentation.
 
-## Troubleshooting
+## License
 
-- **Offboard Mode Fails to Start:**
-    - Ensure the drone is properly connected and armed.
-    - Verify that no other offboard controllers are active.
-    - Check for any errors in the console output for clues.
-
-- **Transition Timeout Exceeded:**
-    - Review configuration parameters to ensure they are set appropriately.
-    - Check drone's sensor health and calibration.
+This project is licensed under the Apache License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-For questions or feedback, please open an issue or LinkedIn [https://www.linkedin.com/in/alireza787b/](https://www.linkedin.com/in/alireza787b/).
+For questions or feedback, please open an [issue](https://github.com/alireza787b/mavsdk_vtol_transition/issues) or connect with me on [LinkedIn](https://www.linkedin.com/in/alireza787b/).
+
