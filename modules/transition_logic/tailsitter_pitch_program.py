@@ -453,7 +453,7 @@ class TailsitterPitchProgram:
                 pitch = euler_angle.pitch_deg if euler_angle else 0.0
                 roll = euler_angle.roll_deg if euler_angle else 0.0
                 airspeed = fixedwing_metrics.airspeed_m_s if fixedwing_metrics else 0.0
-                climb_rate = position_velocity_ned.climb_rate_m_s if position_velocity_ned else 0.0
+                climb_rate = fixedwing_metrics.climb_rate_m_s if fixedwing_metrics else 0.0
 
                 # Update maximum altitude achieved
                 if max_altitude is None or altitude > max_altitude:
