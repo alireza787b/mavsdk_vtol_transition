@@ -1,5 +1,18 @@
-# config/transition_parameters_template.yaml
-
+# ============================================================
+#                Tailsitter Pitch Transition Program
+# ============================================================
+# Repository: alireza787b/mavsdk_vtol_transition
+# GitHub:    https://github.com/alireza787b
+# LinkedIn:  https://www.linkedin.com/in/alireza787b
+# Version:    1.0
+# Date:       December 2024
+#
+# Description:
+# This configuration file is tailored for the Tailsitter Pitch Program,
+# enabling both climb and tilt transitions. It supports over-tilting
+# to gain additional airspeed when necessary, while enforcing strict
+# safety constraints through comprehensive failsafe parameters.
+# ============================================================
 
 # ============================================================
 #                       Transition Logic Type
@@ -11,63 +24,64 @@ transition_type: "tailsitter_pitch_program"  # Options: "tailsitter_pitch_progra
 #                          Operational Flags
 # ============================================================
 
-enable_takeoff: true  # (bool) Enable or disable takeoff functionality
-verbose_mode: false    # (bool) Enable detailed telemetry logging
+enable_takeoff: true        # (bool) Enable or disable takeoff functionality
+verbose_mode: false         # (bool) Enable detailed telemetry logging
 
 # ============================================================
 #                         Connection Settings
 # ============================================================
 
-connection_type: "udp"  # Options: "udp", "serial"
-connection_endpoint: "udp://:14540"  # Example for UDP
+connection_type: "udp"                      # Options: "udp", "serial"
+connection_endpoint: "udp://:14540"         # Example for UDP connection
 
 # ============================================================
 #                       Telemetry Parameters
 # ============================================================
 
-telemetry_update_interval: 0.1  # (s) Interval in seconds to update telemetry data and send offboard command
+cycle_interval: 0.1        # (s) Interval in seconds to update telemetry data and send offboard commands
 
 # ============================================================
 #                        Transition Parameters
 # ============================================================
 
 # Initial Takeoff Phase Parameters
-initial_takeoff_height: 3.0  # (m) Target altitude for the initial auto takeoff phase
+initial_takeoff_height: 3.0    # (m) Target altitude for the initial auto takeoff phase
 
 # Initial Climb Phase Parameters
-initial_climb_rate: 2.0  # (m/s) Climb rate during the initial climb phase
-initial_climb_height: 5.0  # (m) Target altitude for the initial climb phase
+initial_climb_rate: 2.0         # (m/s) Climb rate during the initial climb phase
+initial_climb_height: 5.0       # (m) Target altitude for the initial climb phase
 
 # Secondary Climb Phase Parameters
-secondary_climb_rate: 3.0  # (m/s) Climb rate during the secondary climb phase
+secondary_climb_rate: 3.0       # (m/s) Climb rate during the secondary climb phase
 
 # Main Transition Parameters
 transition_base_altitude: 10.0  # (m) Altitude at which the transition starts
-transition_yaw_angle: 0.0  # (degrees) Yaw angle to turn towards during the transition
-throttle_ramp_time: 10.0  # (s) Time to ramp throttle to maximum
-max_throttle: 0.8  # (ratio, 0-1) Maximum throttle as a fraction of full thrust
-max_tilt_pitch: 80.0  # (degrees) Maximum pitch angle for tilt
+transition_yaw_angle: 0.0        # (degrees) Yaw angle to maintain during the transition
+throttle_ramp_time: 10.0         # (s) Time to ramp throttle to maximum
+max_throttle: 0.8                 # (ratio, 0-1) Maximum throttle as a fraction of full thrust
+max_tilt_pitch: 80.0              # (degrees) Maximum pitch angle for tilt
 
-forward_transition_time: 40.0  # (s) Time to transition to max tilt
-over_tilt_enabled: true       # (bool) Allow tilting beyond max_tilt_pitch (Intentional dive to gain airspeed)
+forward_transition_time: 40.0     # (s) Time to transition to max tilt
+over_tilt_enabled: true           # (bool) Enable over-tilting to gain additional airspeed
 
-transition_air_speed: 20.0  # (m/s) Airspeed to trigger fixed-wing mode
+max_allowed_tilt: -110.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
+
+transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
 
 # ============================================================
 #                       Fail-safe Parameters
 # ============================================================
 
-altitude_failsafe_threshold: 10.0  # (m) Altitude below which to abort the transition
-climb_rate_failsafe_threshold: 0.3  # (m/s) Climb rate below which to abort the transition (Ignored if over_tilt_enabled = true)
-air_speed_failsafe_threshold: 40.0  # (m/s) Airspeed above which to abort the transition
-max_allowed_tilt: 110.0        # (degrees) Maximum allowable tilt during over-tilting
-altitude_loss_limit: 20.0      # (m) Maximum allowable altitude loss during over-tilting
-max_pitch_failsafe: 130.0  # (degrees) Maximum pitch angle before aborting the transition
-max_roll_failsafe: 30.0  # (degrees) Maximum roll angle before aborting the transition
-max_altitude_failsafe: 200.0  # (m) Maximum altitude before aborting the transition
-return_to_launch_on_abort: 5.0  # (bool) Return to home after aborting the transition
-failsafe_multicopter_transition: true  # (bool) Whether to transition to multicopter mode as part of abort
-transition_timeout: 120.0  # (s) Time before aborting the transition
+altitude_failsafe_threshold: 9.0          # (m) Altitude below which to abort the transition
+climb_rate_failsafe_threshold: 0.1        # (m/s) Climb rate below which to abort the transition (set to negative if diving/over-tilt is used)
+altitude_loss_limit: 20.0                  # (m) Maximum allowable altitude loss during over-tilting
+max_pitch_failsafe: 130.0                  # (degrees) Maximum pitch angle before aborting the transition
+max_roll_failsafe: 30.0                    # (degrees) Maximum roll angle before aborting the transition
+max_altitude_failsafe: 200.0               # (m) Maximum altitude before aborting the transition
+return_to_launch_on_abort: true            # (bool) Whether to return to home after aborting the transition
+failsafe_multicopter_transition: true      # (bool) Whether to transition to multicopter mode as part of abort
+transition_timeout: 120.0                  # (s) Time before aborting the transition
 
-
-
+# ============================================================
+#                End of Transition Configuration
+# ============================================================

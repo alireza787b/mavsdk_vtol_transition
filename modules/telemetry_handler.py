@@ -22,7 +22,7 @@ class TelemetryHandler:
         :param verbose: Flag to enable detailed telemetry display.
         """
         self.drone = drone
-        self.update_interval = config.get('telemetry_update_interval', 1.0)
+        self.update_interval = config.get('cycle_interval', 1.0)
         self.verbose = verbose
         self.logger = logging.getLogger(self.__class__.__name__)
         self.telemetry_data = {}
