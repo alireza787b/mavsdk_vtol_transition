@@ -180,7 +180,7 @@ class TailsitterPitchProgram:
                 throttle = min(throttle, max_throttle)  # Ensure throttle does not exceed max
             if i < tilt_steps:
                 tilt += tilt_step
-                tilt = min(tilt, max_tilt)  # Ensure tilt does not exceed max
+                tilt = max(tilt, max_tilt)  # Ensure tilt does not exceed max (Remember tilt is negative)
 
             await self.drone.offboard.set_attitude(
                 Attitude(
