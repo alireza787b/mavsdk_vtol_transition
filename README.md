@@ -78,9 +78,9 @@ The **MAVSDK VTOL Trasistion** is a professional-grade transition logic designed
    pip install -r requirements.txt
    ```
 
-5. **Install MAVSDK Binary:**
+5. **Install MAVSDK Server Binary:**
 
-   Download the appropriate MAVSDK binary for your operating system from the [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page and follow the installation instructions.
+   Depends on your operating system you might need to download the appropriate MAVSDK Server binary for your operating system from the [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page and follow the installation instructions.
 
 ## Configuration
 
