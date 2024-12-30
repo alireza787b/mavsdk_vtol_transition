@@ -54,18 +54,20 @@ initial_climb_height: 15.0       # (m) Target altitude for the initial climb pha
 secondary_climb_rate: 3.0       # (m/s) Climb rate during the secondary climb phase
 
 # Main Transition Parameters
-transition_base_altitude: 100.0  # (m) Altitude at which the transition starts
+transition_base_altitude: 50.0  # (m) Altitude at which the transition starts
 transition_yaw_angle: 0.0        # (degrees) Yaw angle to maintain during the transition
-throttle_ramp_time: 5.0         # (s) Time to ramp throttle to maximum
+throttle_ramp_time: 7.0         # (s) Time to ramp throttle to maximum
 max_throttle: 0.8                 # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 100.0              # (degrees) Maximum pitch angle for tilt
 
-forward_transition_time: 5.0     # (s) Time to transition to max tilt
+forward_transition_time: 7.0     # (s) Time to transition to max tilt
 over_tilt_enabled: true           # (bool) Enable over-tilting to gain additional airspeed
 
 max_allowed_tilt: 120.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
 
 transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
+acceleration_factor: 1.1          # (multiplier) Temporary velocity serpoint after successful transition to the next task
+
 
 # ============================================================
 #                       Fail-safe Parameters
@@ -80,6 +82,7 @@ max_altitude_failsafe: 250.0               # (m) Maximum altitude before abortin
 return_to_launch_on_abort: true            # (bool) Whether to return to home after aborting the transition
 failsafe_multicopter_transition: true      # (bool) Whether to transition to multicopter mode as part of abort
 transition_timeout: 20.0                  # (s) Time before aborting the transition
+
 
 # ============================================================
 #                End of Transition Configuration

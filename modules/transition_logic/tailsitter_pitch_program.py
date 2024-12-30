@@ -568,6 +568,25 @@ class TailsitterPitchProgram:
 
         :return: Status string indicating 'success' or 'failure'.
         """
+        telemetry = self.telemetry_handler.get_telemetry()
+        fixedwing_metrics = telemetry.get("fixedwing_metrics")
+        position_velocity_ned = telemetry.get("position_velocity_ned")
+    
+        # Calculate horizontal velocity
+        if position_velocity_ned:
+            horizontal_velocity = (position_velocity_ned.velocity.north_m_s ** 2 + position_velocity_ned.velocity.east_m_s ** 2) ** 0.5
+        else:
+            horizontal_velocity = self.config.get("transition_air_speed",20) #revert to target airspeed
+    
+        # Apply acceleration factor
+        acceleration_factor = self.config.get("acceleration_factor", 1.0)  # Default acceleration factor is 1.0
+        target_horizontal_velocity = horizontal_velocity * acceleration_factor
+    
+        self.logger.info(f"Current Horizontal Velocity: {horizontal_velocity:.2f} m/s")
+        self.logger.info(f"Target Horizontal Velocity after applying acceleration factor ({acceleration_factor}): {target_horizontal_velocity:.2f} m/s")
+        self.logger.info("Accelerating to target horizontal velocity before transition...")
+    
+
         self.logger.info("Transition succeeded: performing fixed-wing switch.")
 
         try:
@@ -575,11 +594,24 @@ class TailsitterPitchProgram:
                 # Transition to fixed-wing
                 await self.drone.action.transition_to_fixedwing()
             self.logger.info("Transitioned to fixed-wing mode.")
+            
+            
+            await self.drone.offboard.set_velocity_body(
+                        VelocityBodyYawspeed(target_horizontal_velocity, 0.0, 0.0, 0.0)
+                    )
+            self.logger.info("Acceleration to Crise Airspeed.")
+            
+            try:
+                async with self.command_lock:
+                    await self.drone.offboard.stop()
+                self.logger.info("Offboard mode stopped.")
+            except Exception as e:
+                self.logger.error(f"Error stopping offboard mode: {e}")
 
             async with self.command_lock:
                 # Initiate Hold Flight Mode
-                await self.drone.action.hold()
-            self.logger.info("HOLD mode activated.")
+                await self.drone.action.return_to_launch()
+            self.logger.info("Return to Launch mode activated.")
 
             return "success"
 

@@ -67,6 +67,7 @@ over_tilt_enabled: true           # (bool) Enable over-tilting to gain additiona
 max_allowed_tilt: 110.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
 
 transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
+acceleration_factor: 1.1          # (multiplier) Temporary velocity serpoint after successful transition to the next task
 
 # ============================================================
 #                       Fail-safe Parameters
