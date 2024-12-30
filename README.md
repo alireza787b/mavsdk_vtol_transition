@@ -1,6 +1,6 @@
-# MAVSDK VTOL Trasistion
+# MAVSDK VTOL Transition
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-apache-blue.svg)
 ![GitHub Stars](https://img.shields.io/github/stars/alireza787b/mavsdk_vtol_transition.svg)
 ![GitHub Forks](https://img.shields.io/github/forks/alireza787b/mavsdk_vtol_transition.svg)
 ![GitHub Issues](https://img.shields.io/github/issues/alireza787b/mavsdk_vtol_transition.svg)
@@ -78,9 +78,9 @@ The **MAVSDK VTOL Trasistion** is a professional-grade transition logic designed
    pip install -r requirements.txt
    ```
 
-5. **Install MAVSDK Binary:**
+5. **Install MAVSDK Server Binary:**
 
-   Download the appropriate MAVSDK binary for your operating system from the [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page and follow the installation instructions.
+   Depends on your operating system you might need to download the appropriate MAVSDK Server binary for your operating system from the [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page and follow the installation instructions.
 
 ## Configuration
 
@@ -205,7 +205,7 @@ The program supports two primary connection types for MAVLink communication: **U
 
 ## Command-Line Arguments
 
-- `--config`: **(Required)** Path to the YAML configuration file.
+- `--config`: **(Optional)** Path to the YAML configuration file. If not specified will use the default template configuration.
 - `--yaw`: **(Optional)** Transition heading angle in degrees.
 
 **Example:**
