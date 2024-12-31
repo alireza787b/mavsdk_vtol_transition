@@ -40,4 +40,11 @@ class BaseTransition(ABC):
         """
         pass
 
-    # Additional common methods can be defined here if needed
+    @abstractmethod
+    async def handle_post_transition_action(self) -> None:
+        """
+        (Optional) Handle post-transition actions such as
+        continuing on heading, returning to launch, or
+        starting a mission. Subclasses may implement or override.
+        """
+        pass

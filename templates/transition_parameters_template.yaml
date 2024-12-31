@@ -29,3 +29,5 @@ TRANSITION_PAYLOAD_WEIGHT: 0.0  # (kg) Current payload weight influencing transi
 TRANSITION_BALANCE_POINT: 0.0  # (m) Drone's center of gravity during transition
 TRANSITION_USER_OVERRIDE: false  # (bool) Allow manual override of transition parameters
 TRANSITION_MANUAL_CONTROL_MODE: MANUAL  # (enum) Control mode when user override is active
+
+

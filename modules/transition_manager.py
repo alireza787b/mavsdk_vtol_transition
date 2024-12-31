@@ -4,6 +4,8 @@ import logging
 from typing import Type, Dict
 from .transition_logic.base_transition import BaseTransition
 from .transition_logic.tailsitter_pitch_program import TailsitterPitchProgram
+from .transition_logic.post_transition_actions import PostTransitionAction
+
 # Import other transition classes as needed
 
 class TransitionManager:
@@ -35,8 +37,7 @@ class TransitionManager:
     def _select_transition_logic(self) -> BaseTransition:
         """
         Selects and initializes the appropriate BaseTransition subclass based on configuration.
-
-        :return: Instance of a BaseTransition subclass.
+        Defaults to TailsitterPitchProgram if not specified.
         """
         transition_type = self.config.get('transition_type', 'tailsitter_pitch_program').lower()
 

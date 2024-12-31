@@ -69,6 +69,8 @@ max_allowed_tilt: 110.0          # (degrees) Maximum allowable tilt during over-
 transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
 acceleration_factor: 1.1          # (multiplier) Temporary velocity serpoint after successful transition to the next task
 
+post_transition_action: "return_to_launch" # Action to be executed after successful transition to FW (eg. return_to_launch, start_mission_from_waypoint, hold, continue_current_heading)
+
 # ============================================================
 #                       Fail-safe Parameters
 # ============================================================
