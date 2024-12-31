@@ -563,6 +563,7 @@ class TailsitterPitchProgram:
             f"{target_horizontal_velocity:.2f} m/s"
         )
 
+        #TODO: add like last vresion intiall body accelrateon
         self.logger.info("Transition succeeded: performing fixed-wing switch.")
 
         try:
@@ -580,7 +581,7 @@ class TailsitterPitchProgram:
             self.logger.info("Accelerating to cruise airspeed in offboard mode.")
 
             # Optionally wait a short time to let the drone accelerate
-            await asyncio.sleep(self.config.get("acceleration_duration", 1.0))
+            await asyncio.sleep(self.config.get("acceleration_duration", 0.0))
 
             # Stop offboard if you don't want to remain in it
             # (If you want to stay in offboard, you can comment out the following lines)
