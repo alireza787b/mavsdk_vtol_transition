@@ -111,7 +111,7 @@ All operational parameters are defined in YAML configuration files located in th
 | `over_tilt_enabled`              | bool   | Enable over-tilting to gain additional airspeed.                                                                         |
 | `max_allowed_tilt`               | float  | Maximum allowable tilt (degrees) during over-tilting. Negative for downward tilt.                                       |
 | `transition_air_speed`           | float  | Airspeed (m/s) to trigger fixed-wing mode.                                                                                |
-| `acceleration_factor`           | float  | Temporary velocity serpoint multiplier after successful transition.                                                                                |
+| `acceleration_factor`           | float  | Temporary velocity setpoint multiplier after successful transition.                                                                                |
 | `altitude_failsafe_threshold`    | float  | Altitude (meters) below which to abort the transition.                                                                   |
 | `climb_rate_failsafe_threshold`  | float  | Climb rate (m/s) below which to abort the transition. Set to negative if diving/over-tilt is used.                        |
 | `altitude_loss_limit`            | float  | Maximum allowable altitude loss (meters) during over-tilting.                                                             |
@@ -119,8 +119,9 @@ All operational parameters are defined in YAML configuration files located in th
 | `max_roll_failsafe`              | float  | Maximum roll angle (degrees) before aborting the transition.                                                             |
 | `max_altitude_failsafe`          | float  | Maximum altitude (meters) before aborting the transition.                                                                |
 | `return_to_launch_on_abort`      | bool   | Whether to return to home after aborting the transition.                                                                 |
-| `failsafe_multicopter_transition` | bool   | Whether to transition to multicopter mode as part of abort procedures.                                                   |
+| `failsafe_multicopter_transition` | bool   | Whether to transition to multi-copter mode as part of abort procedures.                                                   |
 | `transition_timeout`             | float  | Time (seconds) before aborting the transition.                                                                            |
+| `post_transition_action`         | string  | Action to perform after successful transition. (eg.return_to_launch, start_mission, hold, continue_current_heading)      |
 
 All parameters can be found in the `config` folder. Users can create custom configuration files based on the provided template to suit their specific requirements.
 

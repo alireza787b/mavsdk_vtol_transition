@@ -20,7 +20,7 @@ from modules.transition_logic.post_transition_actions import PostTransitionActio
 #     CONTINUE_CURRENT_HEADING = "continue_current_heading"
 #     HOLD = "hold"
 #     RETURN_TO_LAUNCH = "return_to_launch"
-#     START_MISSION_FROM_WAYPOINT = "start_mission_from_waypoint"
+#     START_MISSION = "start_mission"
 
 
 class TailsitterPitchProgram:
@@ -633,7 +633,7 @@ class TailsitterPitchProgram:
           - continue_current_heading
           - hold
           - return_to_launch
-          - start_mission_from_waypoint
+          - start_mission
         """
         action_name = self.config.get("post_transition_action", "return_to_launch").lower()
         self.logger.info(f"Post-transition action requested: '{action_name}'")
@@ -645,10 +645,8 @@ class TailsitterPitchProgram:
             elif action_name == PostTransitionAction.HOLD.value:
                 await self._hold_mode()
 
-            elif action_name == PostTransitionAction.START_MISSION_FROM_WAYPOINT.value:
-                # TODO You might also read a 'waypoint_index' from config
-                waypoint_index = self.config.get("start_waypoint_index", 2)
-                await self._start_mission_from_waypoint(waypoint_index)
+            elif action_name == PostTransitionAction.START_MISSION.value:
+                await self._start_mission()
 
             #Default or explicit: return_to_launch
             else:
@@ -727,12 +725,10 @@ class TailsitterPitchProgram:
             await self.drone.action.return_to_launch()
         self.logger.info("Return to Launch activated.")
 
-    async def _start_mission_from_waypoint(self, waypoint_index: int) -> None:
+    async def _start_mission(self) -> None:
         """
-        Set the specified mission waypoint as current, then start the mission.
+        Start the uploaded mission.
         """
-        
-
         try:
             
             async with self.command_lock:
@@ -741,7 +737,7 @@ class TailsitterPitchProgram:
         except MissionError as e:
             self.logger.error(f"Failed to start mission: {e}")
             
-        self.logger.info(f"Setting mission item to waypoint #{waypoint_index} and starting mission.")
+        self.logger.info(f"Started the uploaded mission.")
         
 
     async def abort_transition(self) -> str:

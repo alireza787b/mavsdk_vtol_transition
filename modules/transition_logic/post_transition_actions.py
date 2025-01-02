@@ -6,4 +6,4 @@ class PostTransitionAction(Enum):
     CONTINUE_CURRENT_HEADING = "continue_current_heading"
     HOLD = "hold"
     RETURN_TO_LAUNCH = "return_to_launch"
-    START_MISSION_FROM_WAYPOINT = "start_mission_from_waypoint"
+    START_MISSION = "start_mission"
