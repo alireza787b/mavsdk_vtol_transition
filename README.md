@@ -124,7 +124,13 @@ All operational parameters are defined in YAML configuration files located in th
 All parameters can be found in the `config` folder. Users can create custom configuration files based on the provided template to suit their specific requirements.
 
 ## Usage
-
+### Running MAVSDK_SERVER
+Depends on your operating system, you might need to run the mavsdk_server binary (download in last steps) manually. mavsdk_server for windows is already included in the repository. If you are using Windows you can type this command to run that. Feel free to adjust based on the correct file name that you have downlaoded for your opeating system.
+  ```bash
+  cd ~
+  .\mavsdk_server_win32.exe
+  ```
+  For other operating systems, download currect binary from  [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page,
 ### Running the Program
 
 To execute the transition program, use the `main_control.py` script with the desired configuration file. The program supports both Windows and Linux environments.
