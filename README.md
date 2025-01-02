@@ -48,6 +48,7 @@ The **MAVSDK VTOL Trasistion** is a professional-grade transition logic designed
 1. **Clone the Repository:**
 
    ```bash
+   cd ~
    git clone https://github.com/alireza787b/mavsdk_vtol_transition.git
    cd mavsdk_vtol_transition
    ```
@@ -125,17 +126,27 @@ All parameters can be found in the `config` folder. Users can create custom conf
 
 ## Usage
 ### Running MAVSDK_SERVER
-Depends on your operating system, you might need to run the mavsdk_server binary (download in last steps) manually. mavsdk_server for windows is already included in the repository. If you are using Windows you can type this command to run that. Feel free to adjust based on the correct file name that you have downlaoded for your opeating system.
+Depends on your operating system, you might need to run the mavsdk_server binary (download in last steps) manually. mavsdk_server for windows and generic musl Linux (Ubuntu,etc. )is already included in the repository. If you are using Windows or Ubuntu, you can type this command to run that. Feel free to adjust based on the correct file name that you have downlaoded for your opeating system.
+- **For Windows:**
   ```bash
-  cd ~
   .\mavsdk_server_win32.exe
   ```
-  For other operating systems, download currect binary from  [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page,
+  - **For Ubuntu:**
+  ```bash
+  ./mavsdk_server_musl_x86_64
+  ```
+  For other operating systems, download currect binary from  [MAVSDK Releases](https://github.com/mavlink/MAVSDK/releases/) page, and use the currect file name.
+
 ### Running the Program
 
-To execute the transition program, use the `main_control.py` script with the desired configuration file. The program supports both Windows and Linux environments.
+To execute the transition program, use the `main_control.py` script with the desired configuration file, in a new terminal. The program supports both Windows and Linux environments.
+
+  ```bash
+  cd ~/mavsdk_vtol_transition
+  ```
 
 - **Climb then Tilt (Dive) Transition:**
+
 
   ```bash
   python main_control.py --config ./config/dive_pitch_program.yaml
@@ -148,6 +159,7 @@ To execute the transition program, use the `main_control.py` script with the des
   ```
 
 Users can customize the parameters in these configuration files to fit their specific use cases.
+Make sure your virtual environment is active.
 
 ### Connection Options
 
