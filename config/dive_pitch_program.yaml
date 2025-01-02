@@ -70,6 +70,7 @@ acceleration_factor: 1.1          # (multiplier) Temporary velocity setpoint aft
 acceleration_duration: 1.0 # Optional post-transition after transition criteria met
 
 post_transition_action: "return_to_launch" # Action to be executed after successful transition to FW (eg. return_to_launch, start_mission_from_waypoint, hold, continue_current_heading)
+start_waypoint_index: 3 # Waypoint index to proceed after successfull transition
 
 
 # ============================================================

@@ -6,6 +6,7 @@ from mavsdk.offboard import (
     VelocityBodyYawspeed,
     VelocityNedYaw,
     Attitude,
+    AttitudeRate,
     OffboardError,
 )
 from mavsdk.mission import MissionError
@@ -545,6 +546,9 @@ class TailsitterPitchProgram:
         telemetry = self.telemetry_handler.get_telemetry()
         position_velocity_ned = telemetry.get("position_velocity_ned")
 
+        fixedwing_metrics = telemetry.get("fixedwing_metrics")
+        current_throttle = fixedwing_metrics.throttle_percentage if fixedwing_metrics else 0.7
+
         # Calculate current horizontal velocity
         if position_velocity_ned:
             vx = position_velocity_ned.velocity.north_m_s
@@ -565,32 +569,51 @@ class TailsitterPitchProgram:
 
         #TODO: add like last vresion intiall body accelrateon
         self.logger.info("Transition succeeded: performing fixed-wing switch.")
+        
+        
+        # Methode 1
+        # Accelerate in Body frame before transition 
+        #   e.g., forward in the x direction
+        async with self.command_lock:
+            await self.drone.offboard.set_velocity_body(
+                VelocityBodyYawspeed(target_horizontal_velocity, 0.0, 0.0, 0.0)
+            )
+        self.logger.info("Accelerating to cruise airspeed in offboard mode before transition.")
 
+        # Optionally wait a short time to let the drone accelerate
+        await asyncio.sleep(self.config.get("acceleration_duration", 0.5))
+
+        # Methode 2
+        # Hold Attitude before transition
+        # async with self.command_lock:
+        #                 await self.drone.offboard.set_attitude_rate(
+        #                     AttitudeRate(
+        #                         roll_deg_s=0.0,
+        #                         pitch_deg_s=0.0,
+        #                         yaw_deg_s=0.0,
+        #                         thrust_value=current_throttle 
+        #                     )
+        #                 )
+                        
+                
+        # Stop offboard if you don't want to remain in it
+            # (If you want to stay in offboard, you can comment out the following lines)
+        try:
+            async with self.command_lock:
+                            await self.drone.offboard.stop()
+            self.logger.info("Offboard mode stopped after acceleration phase.")
+        except Exception as e:
+            self.logger.error(f"Error stopping offboard mode: {e}")
+                        
+        
         try:
             async with self.command_lock:
                 # Transition to fixed-wing
                 await self.drone.action.transition_to_fixedwing()
             self.logger.info("Transitioned to fixed-wing mode.")
 
-            # Accelerate in Body frame to the target horizontal velocity
-            #   e.g., forward in the x direction
-            async with self.command_lock:
-                await self.drone.offboard.set_velocity_body(
-                    VelocityBodyYawspeed(target_horizontal_velocity, 0.0, 0.0, 0.0)
-                )
-            self.logger.info("Accelerating to cruise airspeed in offboard mode.")
 
-            # Optionally wait a short time to let the drone accelerate
-            await asyncio.sleep(self.config.get("acceleration_duration", 0.0))
-
-            # Stop offboard if you don't want to remain in it
-            # (If you want to stay in offboard, you can comment out the following lines)
-            try:
-                async with self.command_lock:
-                    await self.drone.offboard.stop()
-                self.logger.info("Offboard mode stopped after acceleration phase.")
-            except Exception as e:
-                self.logger.error(f"Error stopping offboard mode: {e}")
+            
 
             # Next: handle post-transition action (modular)
             await self.handle_post_transition_action()
@@ -622,10 +645,10 @@ class TailsitterPitchProgram:
             elif action_name == PostTransitionAction.HOLD.value:
                 await self._hold_mode()
 
-            elif action_name == PostTransitionAction.START_MISSION_FROM_WAYPOINT.value:
-                # TODO You might also read a 'waypoint_index' from config
-                waypoint_index = self.config.get("start_waypoint_index", 2)
-                await self._start_mission_from_waypoint(waypoint_index)
+            # elif action_name == PostTransitionAction.START_MISSION_FROM_WAYPOINT.value:
+            #     # TODO You might also read a 'waypoint_index' from config
+            #     waypoint_index = self.config.get("start_waypoint_index", 2)
+            #     await self._start_mission_from_waypoint(waypoint_index)
 
             # Default or explicit: return_to_launch
             else:
@@ -653,7 +676,7 @@ class TailsitterPitchProgram:
         telemetry = self.telemetry_handler.get_telemetry()
         position_velocity_ned = telemetry.get("position_velocity_ned")
         euler_angle = telemetry.get("euler_angle")
-        current_yaw = euler_angle.get("yaw_deg")
+        current_yaw = euler_angle.yaw_deg
         transition_air_speed = self.config.get("transition_air_speed", 20.0)
         position_velocity_ned = telemetry.get("position_velocity_ned")
         if not position_velocity_ned:
@@ -708,14 +731,7 @@ class TailsitterPitchProgram:
         """
         Set the specified mission waypoint as current, then start the mission.
         """
-        self.logger.info(f"Setting mission item to waypoint #{waypoint_index} and starting mission.")
-        try:
-            async with self.command_lock:
-                await self.drone.mission.set_current_mission_item(waypoint_index)
-            self.logger.info(f"Current mission item set to {waypoint_index}.")
-        except MissionError as e:
-            self.logger.error(f"Failed to set mission item: {e}")
-            return
+        
 
         try:
             async with self.command_lock:
@@ -723,6 +739,15 @@ class TailsitterPitchProgram:
             self.logger.info("Mission started successfully.")
         except MissionError as e:
             self.logger.error(f"Failed to start mission: {e}")
+            
+        # self.logger.info(f"Setting mission item to waypoint #{waypoint_index} and starting mission.")
+        # try:
+        #     async with self.command_lock:
+        #         await self.drone.mission.set_current_mission_item(2)
+        #     self.logger.info(f"Current mission item set to {waypoint_index}.")
+        # except MissionError as e:
+        #     self.logger.error(f"Failed to set mission item: {e}")
+        #     return
 
     async def abort_transition(self) -> str:
         """
