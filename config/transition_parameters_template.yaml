@@ -1,5 +1,5 @@
 # ============================================================
-#                Tailsitter Pitch Transition Program
+#                Tailsitter Climb + Pitch Transition Program
 # ============================================================
 # Repository: alireza787b/mavsdk_vtol_transition
 # GitHub:    https://github.com/alireza787b
@@ -57,16 +57,22 @@ secondary_climb_rate: 3.0       # (m/s) Climb rate during the secondary climb ph
 # Main Transition Parameters
 transition_base_altitude: 10.0  # (m) Altitude at which the transition starts
 transition_yaw_angle: 0.0        # (degrees) Yaw angle to maintain during the transition
-throttle_ramp_time: 20.0         # (s) Time to ramp throttle to maximum
-max_throttle: 0.8                 # (ratio, 0-1) Maximum throttle as a fraction of full thrust
+throttle_ramp_time: 18.0         # (s) Time to ramp throttle to maximum
+max_throttle: 0.6                 # (ratio, 0-1) Maximum throttle as a fraction of full thrust
 max_tilt_pitch: 85.0              # (degrees) Maximum pitch angle for tilt
 
-forward_transition_time: 30.0     # (s) Time to transition to max tilt
+forward_transition_time: 20.0     # (s) Time to transition to max tilt
 over_tilt_enabled: true           # (bool) Enable over-tilting to gain additional airspeed
 
 max_allowed_tilt: 110.0          # (degrees) Maximum allowable tilt during over-tilting (negative for downward tilt)
 
 transition_air_speed: 20.0        # (m/s) Airspeed to trigger fixed-wing mode
+acceleration_factor: 1.1          # (multiplier) Temporary velocity setpoint after successful transition to the next task
+acceleration_duration: 0.0 # Optional post-transition after transition criteria met
+
+
+post_transition_action: "return_to_launch" # Action to be executed after successful transition to FW (eg. return_to_launch, start_mission_from_waypoint, hold, continue_current_heading)
+start_waypoint_index: 2 # Waypoint index to proceed after successfull transition
 
 # ============================================================
 #                       Fail-safe Parameters
