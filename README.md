@@ -121,7 +121,7 @@ All operational parameters are defined in YAML configuration files located in th
 | `return_to_launch_on_abort`      | bool   | Whether to return to home after aborting the transition.                                                                 |
 | `failsafe_multicopter_transition` | bool   | Whether to transition to multi-copter mode as part of abort procedures.                                                   |
 | `transition_timeout`             | float  | Time (seconds) before aborting the transition.                                                                            |
-| `post_transition_action`         | string  | Action to perform after successful transition. (eg.return_to_launch, start_mission, hold, continue_current_heading)      |
+| `post_transition_action`         | string  | Action to perform after successful transition. Options:  `"return_to_launch"`, `"start_mission"`, `"hold"`, `"continue_current_heading"`  |
 
 All parameters can be found in the `config` folder. Users can create custom configuration files based on the provided template to suit their specific requirements.
 
