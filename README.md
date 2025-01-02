@@ -234,6 +234,7 @@ python main_control.py --config ./config/dive_pitch_program.yaml --yaw 90
 ```
 
 This command runs the transition using the `dive_pitch_program.yaml` configuration and sets the transition yaw angle to `90` degrees.
+Depends on configured pitch program, you might need to adjust the PX4 pitch failure detection failsafe.
 
 ## Safety Notice
 
