@@ -340,7 +340,7 @@ class TailsitterPitchProgram:
                 )
                 self.logger.info(
                     f"Step {step + 1}/{total_steps} | "
-                    f"Throttle: {throttle:.2f}, TiltCmd/Actual: {tilt:.0f}/{current_tilt_real:.0f}°, "
+                    f"Throttle: {throttle:.2f}, Tilt Cmd/Actual: {tilt:.0f}/{current_tilt_real:.0f}°, "
                     f"Airspeed: {current_airspeed_real:.1f}m/s, Alt: {current_altitude_real:.1f}m"
                 )
 
@@ -729,65 +729,25 @@ class TailsitterPitchProgram:
 
     async def _start_mission_from_waypoint(self, waypoint_index: int) -> None:
         """
-        Retrieves the current mission from the drone, logs the mission details,
-        sets the specified mission waypoint as current, and starts the mission.
-
-        Parameters:
-            waypoint_index (int): The 0-based index of the mission waypoint to start from.
+        Set the specified mission waypoint as current, then start the mission.
         """
-        # Retrieve and log the current mission plan
-        try:
-            async with self.command_lock:
-                mission_plan = await self.drone.mission.download_mission()
-            self.logger.info("Retrieved current mission plan from the drone:")
-            for idx, item in enumerate(mission_plan.mission_items):
-                self.logger.info(
-                    f"  Waypoint {idx}: "
-                    f"Lat={item.latitude_deg}, Lon={item.longitude_deg}, Alt={item.relative_altitude_m}m, "
-                    f"Speed={item.speed_m_s}m/s, Fly-Through={'Yes' if item.is_fly_through else 'No'}, "
-                    f"Yaw={item.yaw_deg}°, Camera Action={item.camera_action}, "
-                    f"Vehicle Action={item.vehicle_action}"
-                )
-        except MissionError as e:
-            self.logger.error(f"Failed to download mission: {e}")
-            # return
-        except Exception as e:
-            self.logger.error(f"Unexpected error while downloading mission: {e}")
-            # return
+        
 
-        # Validate the waypoint index
-        if not (0 <= waypoint_index < len(mission_plan.mission_items)):
-            self.logger.error(
-                f"Invalid waypoint index: {waypoint_index}. "
-                f"Mission has {len(mission_plan.mission_items)} waypoints."
-            )
-            # return
-
-        # Set the specified mission waypoint as current
-        self.logger.info(
-            f"Setting mission item to waypoint #{waypoint_index} and preparing to start mission."
-        )
-        try:
-            async with self.command_lock:
-                await self.drone.mission.set_current_mission_item(waypoint_index)
-            self.logger.info(f"Current mission item set to waypoint index: {waypoint_index}.")
-        except MissionError as e:
-            self.logger.error(f"Failed to set mission item to waypoint {waypoint_index}: {e}")
-            # return
-        except Exception as e:
-            self.logger.error(f"Unexpected error while setting mission item: {e}")
-            # return
-
-        # Start the mission
         try:
             async with self.command_lock:
                 await self.drone.mission.start_mission()
             self.logger.info("Mission started successfully.")
         except MissionError as e:
             self.logger.error(f"Failed to start mission: {e}")
-        except Exception as e:
-            self.logger.error(f"Unexpected error while starting mission: {e}")
-
+            
+        self.logger.info(f"Setting mission item to waypoint #{waypoint_index} and starting mission.")
+        try:
+            async with self.command_lock:
+                await self.drone.mission.set_current_mission_item(waypoint_index)
+            self.logger.info(f"Current mission item set to {waypoint_index}.")
+        except MissionError as e:
+            self.logger.error(f"Failed to set mission item: {e}")
+            return
 
     async def abort_transition(self) -> str:
         """
