@@ -734,6 +734,7 @@ class TailsitterPitchProgram:
         
 
         try:
+            
             async with self.command_lock:
                 await self.drone.mission.start_mission()
             self.logger.info("Mission started successfully.")
@@ -741,13 +742,7 @@ class TailsitterPitchProgram:
             self.logger.error(f"Failed to start mission: {e}")
             
         self.logger.info(f"Setting mission item to waypoint #{waypoint_index} and starting mission.")
-        try:
-            async with self.command_lock:
-                await self.drone.mission.set_current_mission_item(waypoint_index)
-            self.logger.info(f"Current mission item set to {waypoint_index}.")
-        except MissionError as e:
-            self.logger.error(f"Failed to set mission item: {e}")
-            return
+        
 
     async def abort_transition(self) -> str:
         """
