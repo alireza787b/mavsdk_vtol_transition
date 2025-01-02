@@ -131,7 +131,7 @@ Depends on your operating system, you might need to run the mavsdk_server binary
   ```bash
   .\mavsdk_server_win32.exe
   ```
-  - **For Ubuntu:**
+- **For Ubuntu:**
   ```bash
   ./mavsdk_server_musl_x86_64
   ```
